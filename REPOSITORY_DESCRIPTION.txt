@@ -1,0 +1,2 @@
+Fullstack workout tracking system built with React and Flask. Features exercise management, daily workout creation, personal records tracking, and multi-language support (EN, PT-BR, PT-PT).
+

@@ -1,0 +1,122 @@
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from models import db, Exercise, Workout, WorkoutExercise, PR
+from datetime import datetime
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gymlog.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+CORS(app)
+db.init_app(app)
+
+# Create tables
+with app.app_context():
+    db.create_all()
+
+# Exercise Routes
+@app.route('/api/exercises', methods=['GET'])
+def list_exercises():
+    exercises = Exercise.query.all()
+    return jsonify([{
+        'id': e.id,
+        'name': e.name,
+        'category': e.category,
+        'description': e.description
+    } for e in exercises])
+
+@app.route('/api/exercises', methods=['POST'])
+def create_exercise():
+    data = request.json
+    exercise = Exercise(
+        name=data['name'],
+        category=data.get('category', 'Other'),
+        description=data.get('description', '')
+    )
+    db.session.add(exercise)
+    db.session.commit()
+    return jsonify({'id': exercise.id, 'message': 'Exercise created successfully'}), 201
+
+# Workout Routes
+@app.route('/api/workouts', methods=['GET'])
+def list_workouts():
+    workouts = Workout.query.order_by(Workout.date.desc()).all()
+    return jsonify([{
+        'id': w.id,
+        'name': w.name,
+        'date': w.date.isoformat(),
+        'exercises': [{
+            'id': we.exercise.id,
+            'name': we.exercise.name,
+            'sets': we.sets,
+            'reps': we.reps,
+            'weight': we.weight,
+            'notes': we.notes
+        } for we in w.exercises]
+    } for w in workouts])
+
+@app.route('/api/workouts', methods=['POST'])
+def create_workout():
+    data = request.json
+    workout = Workout(
+        name=data['name'],
+        date=datetime.fromisoformat(data['date'])
+    )
+    db.session.add(workout)
+    
+    for ex_data in data.get('exercises', []):
+        workout_exercise = WorkoutExercise(
+            workout=workout,
+            exercise_id=ex_data['exercise_id'],
+            sets=ex_data.get('sets', 0),
+            reps=ex_data.get('reps', 0),
+            weight=ex_data.get('weight', 0),
+            notes=ex_data.get('notes', '')
+        )
+        db.session.add(workout_exercise)
+    
+    db.session.commit()
+    return jsonify({'id': workout.id, 'message': 'Workout created successfully'}), 201
+
+# PR Routes
+@app.route('/api/prs', methods=['GET'])
+def list_prs():
+    prs = PR.query.order_by(PR.date.desc()).all()
+    return jsonify([{
+        'id': p.id,
+        'exercise_id': p.exercise_id,
+        'exercise_name': p.exercise.name,
+        'weight': p.weight,
+        'reps': p.reps,
+        'date': p.date.isoformat(),
+        'notes': p.notes
+    } for p in prs])
+
+@app.route('/api/prs', methods=['POST'])
+def create_pr():
+    data = request.json
+    pr = PR(
+        exercise_id=data['exercise_id'],
+        weight=data['weight'],
+        reps=data.get('reps', 1),
+        date=datetime.fromisoformat(data.get('date', datetime.now().isoformat())),
+        notes=data.get('notes', '')
+    )
+    db.session.add(pr)
+    db.session.commit()
+    return jsonify({'id': pr.id, 'message': 'PR registered successfully'}), 201
+
+@app.route('/api/prs/exercise/<int:exercise_id>', methods=['GET'])
+def prs_by_exercise(exercise_id):
+    prs = PR.query.filter_by(exercise_id=exercise_id).order_by(PR.date.desc()).all()
+    return jsonify([{
+        'id': p.id,
+        'weight': p.weight,
+        'reps': p.reps,
+        'date': p.date.isoformat(),
+        'notes': p.notes
+    } for p in prs])
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
+
