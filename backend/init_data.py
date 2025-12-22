@@ -15,12 +15,39 @@ def init_data():
         
         # Create sample exercises
         exercises_data = [
+            # Chest
             {'name': 'Bench Press', 'category': 'Chest', 'description': 'Chest development exercise'},
-            {'name': 'Squat', 'category': 'Legs', 'description': 'Fundamental leg exercise'},
-            {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
-            {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
-            {'name': 'Barbell Curl', 'category': 'Biceps', 'description': 'Bicep isolation'},
+            {'name': 'Incline Bench Press', 'category': 'Chest', 'description': 'Upper chest development'},
+            {'name': 'Decline Bench Press', 'category': 'Chest', 'description': 'Lower chest development'},
+            
+            # Triceps
             {'name': 'Tricep Pushdown', 'category': 'Triceps', 'description': 'Tricep extension'},
+            {'name': 'Tricep Kickback', 'category': 'Triceps', 'description': 'Tricep isolation exercise'},
+            {'name': 'Overhead Tricep Extension', 'category': 'Triceps', 'description': 'Tricep extension overhead'},
+            {'name': 'French Press', 'category': 'Triceps', 'description': 'Tricep isolation with barbell'},
+            
+            # Back
+            {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
+            {'name': 'Low Row', 'category': 'Back', 'description': 'Mid-back development with low cable'},
+            {'name': 'Cable Row', 'category': 'Back', 'description': 'Back width development'},
+            {'name': 'High Row', 'category': 'Back', 'description': 'Upper back development'},
+            
+            # Biceps
+            {'name': 'Barbell Curl', 'category': 'Biceps', 'description': 'Bicep isolation'},
+            {'name': 'Scott Curl', 'category': 'Biceps', 'description': 'Bicep isolation on preacher bench'},
+            {'name': 'Hammer Curl', 'category': 'Biceps', 'description': 'Brachialis and bicep development'},
+            {'name': '45 Degree Curl', 'category': 'Biceps', 'description': 'Bicep curl at 45 degree angle'},
+            
+            # Legs
+            {'name': 'Squat', 'category': 'Legs', 'description': 'Fundamental leg exercise'},
+            {'name': 'Leg Press', 'category': 'Legs', 'description': 'Quadriceps development'},
+            {'name': 'Leg Extension', 'category': 'Legs', 'description': 'Quadriceps isolation'},
+            {'name': 'Leg Curl', 'category': 'Legs', 'description': 'Hamstring isolation'},
+            {'name': 'Calf Raise', 'category': 'Legs', 'description': 'Calf development'},
+            {'name': 'Smith Machine Squat', 'category': 'Legs', 'description': 'Squat with guided bar'},
+            
+            # Shoulders
+            {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
         ]
         
         exercises = []
@@ -91,7 +118,7 @@ def init_data():
         
         db.session.commit()
         
-        print("✅ Sample data created successfully!")
+        print("Sample data created successfully!")
         print(f"   - {len(exercises)} exercises")
         print(f"   - {len(workouts_data)} workouts")
         print(f"   - {len(prs_data)} PRs")

@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from models import db, Exercise, Workout, WorkoutExercise, PR
+from models import db, Exercise, Workout, WorkoutExercise, PR, Routine, RoutineExercise
 from datetime import datetime
 
 app = Flask(__name__)
@@ -116,6 +116,99 @@ def prs_by_exercise(exercise_id):
         'date': p.date.isoformat(),
         'notes': p.notes
     } for p in prs])
+
+# Routine Routes
+@app.route('/api/routines', methods=['GET'])
+def list_routines():
+    routines = Routine.query.order_by(Routine.created_at.desc()).all()
+    return jsonify([{
+        'id': r.id,
+        'name': r.name,
+        'description': r.description,
+        'created_at': r.created_at.isoformat(),
+        'exercises': [{
+            'id': re.exercise.id,
+            'name': re.exercise.name,
+            'sets': re.sets,
+            'reps': re.reps,
+            'order': re.order,
+            'notes': re.notes
+        } for re in r.exercises]
+    } for r in routines])
+
+@app.route('/api/routines', methods=['POST'])
+def create_routine():
+    data = request.json
+    routine = Routine(
+        name=data['name'],
+        description=data.get('description', '')
+    )
+    db.session.add(routine)
+    
+    for idx, ex_data in enumerate(data.get('exercises', [])):
+        routine_exercise = RoutineExercise(
+            routine=routine,
+            exercise_id=ex_data['exercise_id'],
+            sets=ex_data.get('sets', 0),
+            reps=ex_data.get('reps', 0),
+            order=ex_data.get('order', idx),
+            notes=ex_data.get('notes', '')
+        )
+        db.session.add(routine_exercise)
+    
+    db.session.commit()
+    return jsonify({'id': routine.id, 'message': 'Routine created successfully'}), 201
+
+@app.route('/api/routines/<int:routine_id>', methods=['GET'])
+def get_routine(routine_id):
+    routine = Routine.query.get_or_404(routine_id)
+    return jsonify({
+        'id': routine.id,
+        'name': routine.name,
+        'description': routine.description,
+        'created_at': routine.created_at.isoformat(),
+        'exercises': [{
+            'id': re.exercise.id,
+            'name': re.exercise.name,
+            'sets': re.sets,
+            'reps': re.reps,
+            'order': re.order,
+            'notes': re.notes
+        } for re in routine.exercises]
+    })
+
+@app.route('/api/routines/<int:routine_id>', methods=['PUT'])
+def update_routine(routine_id):
+    routine = Routine.query.get_or_404(routine_id)
+    data = request.json
+    
+    routine.name = data.get('name', routine.name)
+    routine.description = data.get('description', routine.description)
+    
+    # Remove existing exercises
+    RoutineExercise.query.filter_by(routine_id=routine_id).delete()
+    
+    # Add new exercises
+    for idx, ex_data in enumerate(data.get('exercises', [])):
+        routine_exercise = RoutineExercise(
+            routine=routine,
+            exercise_id=ex_data['exercise_id'],
+            sets=ex_data.get('sets', 0),
+            reps=ex_data.get('reps', 0),
+            order=ex_data.get('order', idx),
+            notes=ex_data.get('notes', '')
+        )
+        db.session.add(routine_exercise)
+    
+    db.session.commit()
+    return jsonify({'message': 'Routine updated successfully'})
+
+@app.route('/api/routines/<int:routine_id>', methods=['DELETE'])
+def delete_routine(routine_id):
+    routine = Routine.query.get_or_404(routine_id)
+    db.session.delete(routine)
+    db.session.commit()
+    return jsonify({'message': 'Routine deleted successfully'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

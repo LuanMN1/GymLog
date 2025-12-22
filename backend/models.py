@@ -57,3 +57,33 @@ class PR(db.Model):
     def __repr__(self):
         return f'<PR {self.exercise_id} - {self.weight}kg>'
 
+class Routine(db.Model):
+    __tablename__ = 'routines'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    exercises = db.relationship('RoutineExercise', back_populates='routine', cascade='all, delete-orphan', order_by='RoutineExercise.order')
+    
+    def __repr__(self):
+        return f'<Routine {self.name}>'
+
+class RoutineExercise(db.Model):
+    __tablename__ = 'routine_exercises'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False)
+    sets = db.Column(db.Integer, default=0)
+    reps = db.Column(db.Integer, default=0)
+    order = db.Column(db.Integer, default=0)
+    notes = db.Column(db.Text)
+    
+    routine = db.relationship('Routine', back_populates='exercises')
+    exercise = db.relationship('Exercise')
+    
+    def __repr__(self):
+        return f'<RoutineExercise {self.exercise_id} - {self.routine_id}>'
+
