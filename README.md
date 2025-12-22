@@ -10,12 +10,13 @@ A fullstack application for managing gym workouts, tracking personal records (PR
 
 ## Features
 
-- ✅ Exercise management
-- ✅ Daily workout creation
+- ✅ Exercise management with filters and pagination
 - ✅ Personal Records (PR) tracking
-- ✅ Workout history
-- ✅ Progress monitoring
+- ✅ Workout routines (My Workout) - reusable workout templates
 - ✅ Multi-language support (EN, PT-BR, PT-PT)
+- ✅ Exercise name translations
+- ✅ Forms for creating exercises, PRs, and routines
+- ✅ Edit and delete routines
 
 ## Project Structure
 
@@ -74,9 +75,12 @@ Frontend will run on: `http://localhost:3000`
 - `GET /api/exercises` - List all exercises
 - `POST /api/exercises` - Create new exercise
 
-### Workouts
-- `GET /api/workouts` - List all workouts
-- `POST /api/workouts` - Create new workout
+### Routines
+- `GET /api/routines` - List all routines
+- `POST /api/routines` - Create new routine
+- `GET /api/routines/<id>` - Get specific routine
+- `PUT /api/routines/<id>` - Update routine
+- `DELETE /api/routines/<id>` - Delete routine
 
 ### Personal Records
 - `GET /api/prs` - List all PRs
@@ -95,9 +99,15 @@ Language can be changed via the language switcher in the application header.
 ## Development Roadmap
 
 - ✅ Basic structure and data visualization
-- 🔄 Forms for creating exercises, workouts, and PRs
-- 🔄 Edit and delete functionality
+- ✅ Multi-language support (EN, PT-BR, PT-PT)
+- ✅ Forms for creating exercises, PRs, and routines
+- ✅ Exercise filters (by category and muscle group)
+- ✅ Pagination for exercises (2 rows per page)
+- ✅ Exercise name translations
+- ✅ Workout routines (My Workout) with exercise management
+- ✅ Edit and delete routines
+- 🔄 Edit and delete exercises and PRs
 - 🔄 Progress charts and statistics
-- 🔄 Filters and search
+- 🔄 Search functionality
 - 🔄 User authentication
 
