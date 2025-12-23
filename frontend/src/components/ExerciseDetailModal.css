@@ -1,0 +1,225 @@
+.exercise-detail-overlay {
+  z-index: 2000;
+}
+
+.exercise-detail-modal {
+  background: #1a1a1a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+  border: 1px solid #3b82f6;
+  animation: slideInScale 0.3s ease-out;
+}
+
+@keyframes slideInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.exercise-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem;
+  border-bottom: 2px solid #3b82f6;
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.exercise-detail-header h2 {
+  margin: 0;
+  font-size: 2rem;
+  color: white;
+}
+
+.exercise-detail-header .close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.exercise-detail-header .close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.exercise-detail-content {
+  padding: 2rem;
+}
+
+.exercise-info-section {
+  margin-bottom: 2rem;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.info-row.full-width {
+  flex-direction: column;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #60a5fa;
+  min-width: 120px;
+  font-size: 0.95rem;
+}
+
+.info-value {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.info-description {
+  color: #d0d0d0;
+  margin: 0.5rem 0 0 0;
+  line-height: 1.6;
+}
+
+.muscle-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.muscle-tag {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.exercise-tutorial-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #3b82f6;
+}
+
+.exercise-tutorial-section h3 {
+  color: #ffffff;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.tutorial-image-container {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0a0a0a;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #3b82f6;
+}
+
+.tutorial-image {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+  display: block;
+  background: #f0f0f0;
+  border-radius: 8px;
+}
+
+.tutorial-image[src=""] {
+  display: none;
+}
+
+.tutorial-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #999;
+  text-align: center;
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.instructions {
+  background: #2a2a2a;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-top: 1.5rem;
+  border: 1px solid #3b82f6;
+}
+
+.instructions h4 {
+  color: #ffffff;
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+}
+
+.instructions ol {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #d0d0d0;
+  line-height: 1.8;
+}
+
+.instructions li {
+  margin-bottom: 0.5rem;
+}
+
+.exercise-detail-footer {
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #3b82f6;
+  display: flex;
+  justify-content: flex-end;
+  background: #1a1a1a;
+  border-radius: 0 0 16px 16px;
+}
+
+@media (max-width: 768px) {
+  .exercise-detail-modal {
+    max-width: 95%;
+    margin: 1rem;
+  }
+
+  .exercise-detail-header {
+    padding: 1.5rem;
+  }
+
+  .exercise-detail-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .exercise-detail-content {
+    padding: 1.5rem;
+  }
+
+  .info-row {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .info-label {
+    min-width: auto;
+  }
+}
+

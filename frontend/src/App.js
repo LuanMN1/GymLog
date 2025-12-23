@@ -6,6 +6,7 @@ import { getTranslatedExerciseName } from './i18n/exerciseTranslations';
 import ExerciseForm from './components/ExerciseForm';
 import PRForm from './components/PRForm';
 import RoutineForm from './components/RoutineForm';
+import ExerciseDetailModal from './components/ExerciseDetailModal';
 
 const LanguageContext = createContext();
 
@@ -53,9 +54,10 @@ function App() {
   const [showPRForm, setShowPRForm] = useState(false);
   const [showRoutineForm, setShowRoutineForm] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState(null);
+  const [selectedExercise, setSelectedExercise] = useState(null);
   const [exerciseFilter, setExerciseFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 8; // 2 linhas x 4 colunas (aproximadamente)
+  const itemsPerPage = 6; // 2 linhas x 3 colunas (3 em cima, 3 embaixo)
 
   useEffect(() => {
     loadData();
@@ -94,11 +96,11 @@ function App() {
       filtered = exercises;
     } else if (exerciseFilter === 'upper') {
       filtered = exercises.filter(ex => 
-        ['Chest', 'Back', 'Biceps', 'Triceps', 'Shoulders'].includes(ex.category)
+        ['Chest', 'Back', 'Biceps', 'Triceps', 'Shoulders', 'Forearms'].includes(ex.category)
       );
     } else if (exerciseFilter === 'lower') {
       filtered = exercises.filter(ex => 
-        ['Legs'].includes(ex.category)
+        ['Legs', 'Core'].includes(ex.category)
       );
     } else {
       filtered = exercises.filter(ex => ex.category === exerciseFilter);
@@ -239,20 +241,43 @@ function App() {
                 >
                   {t('filters.legs')}
                 </button>
+                <button 
+                  className={`filter-btn ${exerciseFilter === 'Shoulders' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('Shoulders')}
+                >
+                  {t('filters.shoulders')}
+                </button>
+                <button 
+                  className={`filter-btn ${exerciseFilter === 'Forearms' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('Forearms')}
+                >
+                  {t('filters.forearms')}
+                </button>
+                <button 
+                  className={`filter-btn ${exerciseFilter === 'Core' ? 'active' : ''}`}
+                  onClick={() => handleFilterChange('Core')}
+                >
+                  {t('filters.core')}
+                </button>
               </div>
             )}
             
             {exercises.length === 0 ? (
-              <p>{t('exercises.empty')}</p>
+              <p className="empty-message">{t('exercises.empty')}</p>
             ) : (
               <>
                 {getFilteredExercises().length === 0 ? (
-                  <p>{t('exercises.noResults')}</p>
+                  <p className="empty-message">{t('exercises.noResults')}</p>
                 ) : (
                   <>
                     <div className="grid">
                       {getPaginatedExercises().map(ex => (
-                        <div key={ex.id} className="card">
+                        <div 
+                          key={ex.id} 
+                          className="card exercise-card"
+                          onClick={() => setSelectedExercise(ex)}
+                          style={{ cursor: 'pointer' }}
+                        >
                           <h3>{getTranslatedExerciseName(ex.name, language)}</h3>
                           <p className="categoria">{t('exercises.category')}: {ex.category}</p>
                           {ex.description && <p>{ex.description}</p>}
@@ -304,7 +329,7 @@ function App() {
               </button>
             </div>
             {prs.length === 0 ? (
-              <p>{t('prs.empty')}</p>
+              <p className="empty-message">{t('prs.empty')}</p>
             ) : (
               <div className="grid">
                 {prs.map(pr => (
@@ -336,7 +361,7 @@ function App() {
               </button>
             </div>
             {routines.length === 0 ? (
-              <p>{t('routines.empty')}</p>
+              <p className="empty-message">{t('routines.empty')}</p>
             ) : (
               <div className="routines-list">
                 {routines.map(routine => (
@@ -421,6 +446,13 @@ function App() {
           onSuccess={loadData}
           exercises={exercises}
           routine={editingRoutine}
+        />
+      )}
+
+      {selectedExercise && (
+        <ExerciseDetailModal
+          exercise={selectedExercise}
+          onClose={() => setSelectedExercise(null)}
         />
       )}
     </div>

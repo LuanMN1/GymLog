@@ -29,7 +29,7 @@ def init_data():
             # Back
             {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
             {'name': 'Low Row', 'category': 'Back', 'description': 'Mid-back development with low cable'},
-            {'name': 'Cable Row', 'category': 'Back', 'description': 'Back width development'},
+            {'name': 'T-Bar Row', 'category': 'Back', 'description': 'Back width development'},
             {'name': 'High Row', 'category': 'Back', 'description': 'Upper back development'},
             
             # Biceps
@@ -48,6 +48,23 @@ def init_data():
             
             # Shoulders
             {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
+            {'name': 'Lateral Raise', 'category': 'Shoulders', 'description': 'Lateral deltoid isolation'},
+            {'name': 'Front Raise', 'category': 'Shoulders', 'description': 'Front deltoid development'},
+            {'name': 'Rear Delt Fly', 'category': 'Shoulders', 'description': 'Rear deltoid isolation'},
+            {'name': 'Arnold Press', 'category': 'Shoulders', 'description': 'Complete shoulder development'},
+            
+            # Forearms
+            {'name': 'Wrist Curl', 'category': 'Forearms', 'description': 'Forearm flexor development'},
+            {'name': 'Reverse Wrist Curl', 'category': 'Forearms', 'description': 'Forearm extensor development'},
+            {'name': 'Farmer\'s Walk', 'category': 'Forearms', 'description': 'Grip strength and forearm endurance'},
+            
+            # Core/Abdomen
+            {'name': 'Crunches', 'category': 'Core', 'description': 'Upper abdominals'},
+            {'name': 'Leg Raises', 'category': 'Core', 'description': 'Lower abdominals'},
+            {'name': 'Plank', 'category': 'Core', 'description': 'Core stability and endurance'},
+            {'name': 'Russian Twist', 'category': 'Core', 'description': 'Oblique development'},
+            {'name': 'Mountain Climbers', 'category': 'Core', 'description': 'Full core workout'},
+            {'name': 'Ab Wheel', 'category': 'Core', 'description': 'Advanced core strength'},
         ]
         
         exercises = []

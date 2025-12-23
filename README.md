@@ -102,10 +102,14 @@ Language can be changed via the language switcher in the application header.
 - ✅ Multi-language support (EN, PT-BR, PT-PT)
 - ✅ Forms for creating exercises, PRs, and routines
 - ✅ Exercise filters (by category and muscle group)
-- ✅ Pagination for exercises (2 rows per page)
+- ✅ Pagination for exercises (6 items per page - 3x3 grid)
 - ✅ Exercise name translations
 - ✅ Workout routines (My Workout) with exercise management
 - ✅ Edit and delete routines
+- ✅ Exercise detail modal with GIFs and muscle groups
+- ✅ Additional exercises (Shoulders, Forearms, Core/Abdomen)
+- ✅ Black/Blue color scheme
+- ✅ Clickable exercise cards with detailed information
 - 🔄 Edit and delete exercises and PRs
 - 🔄 Progress charts and statistics
 - 🔄 Search functionality

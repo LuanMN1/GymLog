@@ -24,7 +24,10 @@ export const translations = {
       back: "Back",
       biceps: "Biceps",
       triceps: "Triceps",
-      legs: "Legs"
+      legs: "Legs",
+      shoulders: "Shoulders",
+      forearms: "Forearms",
+      core: "Core/Abdomen"
     },
     pagination: {
       previous: "Previous",
@@ -42,6 +45,15 @@ export const translations = {
       empty: "No PRs registered yet.",
       reps: "reps",
       needExercises: "Create at least one exercise first"
+    },
+    exerciseDetail: {
+      category: "Category",
+      description: "Description",
+      targetMuscles: "Target Muscles",
+      tutorial: "Exercise Tutorial",
+      howTo: "How to Perform",
+      imageUnavailable: "Tutorial image not available",
+      close: "Close"
     },
     common: {
       sets: "sets",
@@ -155,7 +167,10 @@ export const translations = {
       back: "Costas",
       biceps: "Bíceps",
       triceps: "Tríceps",
-      legs: "Pernas"
+      legs: "Pernas",
+      shoulders: "Ombros",
+      forearms: "Antebraços",
+      core: "Abdômen"
     },
     pagination: {
       previous: "Anterior",
@@ -258,6 +273,15 @@ export const translations = {
       confirmDelete: "Tem certeza que deseja excluir esta rotina?",
       deleteError: "Falha ao excluir rotina",
       exercises: "Exercícios"
+    },
+    exerciseDetail: {
+      category: "Categoria",
+      description: "Descrição",
+      targetMuscles: "Músculos Trabalhados",
+      tutorial: "Tutorial do Exercício",
+      howTo: "Como Realizar",
+      imageUnavailable: "Imagem do tutorial não disponível",
+      close: "Fechar"
     }
   },
   'pt-PT': {
@@ -285,7 +309,10 @@ export const translations = {
       back: "Costas",
       biceps: "Bíceps",
       triceps: "Tríceps",
-      legs: "Pernas"
+      legs: "Pernas",
+      shoulders: "Ombros",
+      forearms: "Antebraços",
+      core: "Abdômen"
     },
     pagination: {
       previous: "Anterior",
@@ -388,6 +415,15 @@ export const translations = {
       confirmDelete: "Tem a certeza que deseja eliminar esta rotina?",
       deleteError: "Falha ao eliminar rotina",
       exercises: "Exercícios"
+    },
+    exerciseDetail: {
+      category: "Categoria",
+      description: "Descrição",
+      targetMuscles: "Músculos Trabalhados",
+      tutorial: "Tutorial do Exercício",
+      howTo: "Como Realizar",
+      imageUnavailable: "Imagem do tutorial não disponível",
+      close: "Fechar"
     }
   }
 };
