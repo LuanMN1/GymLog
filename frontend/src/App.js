@@ -3,10 +3,16 @@ import './App.css';
 import axios from 'axios';
 import { translations } from './i18n/translations';
 import { getTranslatedExerciseName } from './i18n/exerciseTranslations';
+import { isTimeBasedExercise } from './utils/exerciseTypes';
 import ExerciseForm from './components/ExerciseForm';
 import PRForm from './components/PRForm';
 import RoutineForm from './components/RoutineForm';
 import ExerciseDetailModal from './components/ExerciseDetailModal';
+import StartRoutineModal from './components/StartRoutineModal';
+import ExecuteRoutineModal from './components/ExecuteRoutineModal';
+import PresetRoutineModal from './components/PresetRoutineModal';
+import WorkoutSetsModal from './components/WorkoutSetsModal';
+import { presetRoutines } from './data/presetRoutines';
 
 const LanguageContext = createContext();
 
@@ -49,15 +55,26 @@ function App() {
   const [exercises, setExercises] = useState([]);
   const [prs, setPRs] = useState([]);
   const [routines, setRoutines] = useState([]);
+  const [workouts, setWorkouts] = useState([]);
   const [activeTab, setActiveTab] = useState('exercises');
   const [showExerciseForm, setShowExerciseForm] = useState(false);
   const [showPRForm, setShowPRForm] = useState(false);
   const [showRoutineForm, setShowRoutineForm] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
+  const [selectedRoutine, setSelectedRoutine] = useState(null);
+  const [showStartRoutineModal, setShowStartRoutineModal] = useState(false);
+  const [showExecuteRoutineModal, setShowExecuteRoutineModal] = useState(false);
+  const [selectedPresetRoutine, setSelectedPresetRoutine] = useState(null);
+  const [showWorkoutSetsModal, setShowWorkoutSetsModal] = useState(false);
+  const [selectedWorkoutExercise, setSelectedWorkoutExercise] = useState(null);
+  const [expandedRoutines, setExpandedRoutines] = useState(new Set());
   const [exerciseFilter, setExerciseFilter] = useState('all');
+  const [historyFilter, setHistoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [historyPage, setHistoryPage] = useState(1);
   const itemsPerPage = 6; // 2 linhas x 3 colunas (3 em cima, 3 embaixo)
+  const historyItemsPerPage = 3; // Máximo 3 treinos por página no histórico
 
   useEffect(() => {
     loadData();
@@ -65,14 +82,16 @@ function App() {
 
   const loadData = async () => {
     try {
-      const [exRes, prsRes, routinesRes] = await Promise.all([
+      const [exRes, prsRes, routinesRes, workoutsRes] = await Promise.all([
         axios.get('/api/exercises'),
         axios.get('/api/prs'),
-        axios.get('/api/routines')
+        axios.get('/api/routines'),
+        axios.get('/api/workouts')
       ]);
       setExercises(exRes.data);
       setPRs(prsRes.data);
       setRoutines(routinesRes.data);
+      setWorkouts(workoutsRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
     }
@@ -87,6 +106,145 @@ function App() {
       ...(language === 'en' ? {} : { locale: language === 'pt-BR' ? 'pt-BR' : 'pt-PT' })
     };
     return date.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), options);
+  };
+
+  // Função para obter nome e descrição traduzidos de uma rotina
+  const getTranslatedRoutine = (routine) => {
+    if (routine.preset_id) {
+      const presetRoutine = presetRoutines.find(pr => pr.id === routine.preset_id);
+      if (presetRoutine) {
+        return {
+          name: language === 'en' ? presetRoutine.name : presetRoutine.namePt,
+          description: language === 'en' ? presetRoutine.descriptionEn : presetRoutine.description
+        };
+      }
+    }
+    // Se não for rotina pré-montada, retorna os valores originais
+    return {
+      name: routine.name,
+      description: routine.description
+    };
+  };
+
+  // Memoizar rotinas traduzidas para garantir atualização quando o idioma mudar
+  const translatedRoutines = React.useMemo(() => {
+    return routines.map(routine => ({
+      ...routine,
+      translated: getTranslatedRoutine(routine)
+    }));
+  }, [routines, language]);
+
+  // Função para obter nome traduzido de um workout
+  const getTranslatedWorkout = (workout) => {
+    // Se tiver preset_id, usa diretamente
+    if (workout.preset_id) {
+      const presetRoutine = presetRoutines.find(pr => pr.id === workout.preset_id);
+      if (presetRoutine) {
+        return language === 'en' ? presetRoutine.name : presetRoutine.namePt;
+      }
+    }
+    
+    // Tenta fazer match do nome do workout com rotinas pré-montadas
+    // Remove prefixos como "Workout A -", "Workout B -", "Workout C -", etc.
+    const workoutNameClean = workout.name.replace(/^Workout\s+[A-Z]\s*-\s*/i, '').trim();
+    
+    // Procura por correspondência exata ou parcial no nome
+    const matchingPreset = presetRoutines.find(pr => {
+      const presetNameEn = pr.name.toLowerCase();
+      const presetNamePt = pr.namePt.toLowerCase();
+      const workoutNameLower = workoutNameClean.toLowerCase();
+      
+      // Verifica se o nome do workout contém o nome da rotina ou vice-versa
+      return presetNameEn === workoutNameLower || 
+             presetNamePt === workoutNameLower ||
+             workoutNameLower.includes(presetNameEn) ||
+             workoutNameLower.includes(presetNamePt) ||
+             presetNameEn.includes(workoutNameLower) ||
+             presetNamePt.includes(workoutNameLower);
+    });
+    
+    if (matchingPreset) {
+      return language === 'en' ? matchingPreset.name : matchingPreset.namePt;
+    }
+    
+    // Se não encontrar correspondência, retorna o nome original
+    return workout.name;
+  };
+
+  const getCategoryTranslation = (category) => {
+    const categoryMap = {
+      'Chest': t('filters.chest'),
+      'Back': t('filters.back'),
+      'Biceps': t('filters.biceps'),
+      'Triceps': t('filters.triceps'),
+      'Legs': t('filters.legs'),
+      'Shoulders': t('filters.shoulders'),
+      'Forearms': t('filters.forearms'),
+      'Core': t('filters.core')
+    };
+    return categoryMap[category] || category;
+  };
+
+  // Função para traduzir observações de exercícios
+  const getTranslatedExerciseNote = (note, exerciseName, presetId = null) => {
+    if (!note || note.trim() === '') return note;
+
+    // Mapeamento de traduções comuns
+    const noteTranslations = {
+      'Heavy': language === 'en' ? 'Heavy' : 'Pesado',
+      'Pesado': language === 'en' ? 'Heavy' : 'Pesado',
+      'Seconds': language === 'en' ? 'Seconds' : 'Segundos',
+      'Segundos': language === 'en' ? 'Seconds' : 'Segundos',
+      'Watch your form!': language === 'en' ? 'Watch your form!' : 'Cuidado com a forma!',
+      'Cuidado com a forma!': language === 'en' ? 'Watch your form!' : 'Cuidado com a forma!',
+      'Each side': language === 'en' ? 'Each side' : 'Cada lado',
+      'Cada lado': language === 'en' ? 'Each side' : 'Cada lado',
+      'Each leg': language === 'en' ? 'Each leg' : 'Cada perna',
+      'Cada perna': language === 'en' ? 'Each leg' : 'Cada perna',
+      'Warm-up: 1 light set': language === 'en' ? 'Warm-up: 1 light set' : 'Aquecimento: 1 série leve',
+      'Aquecimento: 1 série leve': language === 'en' ? 'Warm-up: 1 light set' : 'Aquecimento: 1 série leve'
+    };
+
+    // Verifica se há tradução direta
+    if (noteTranslations[note]) {
+      return noteTranslations[note];
+    }
+
+    // Se tiver preset_id, busca primeiro na rotina pré-montada específica
+    if (presetId) {
+      const presetRoutine = presetRoutines.find(pr => pr.id === presetId);
+      if (presetRoutine) {
+        for (const ex of presetRoutine.exercises) {
+          if (ex.name === exerciseName) {
+            // Verifica se a observação atual corresponde à versão em inglês ou português
+            if (ex.notes === note && ex.notesPt) {
+              return language === 'en' ? ex.notes : ex.notesPt;
+            }
+            if (ex.notesPt === note && ex.notes) {
+              return language === 'en' ? ex.notes : ex.notesPt;
+            }
+          }
+        }
+      }
+    }
+
+    // Se não tiver preset_id ou não encontrar, busca em todas as rotinas pré-montadas
+    for (const presetRoutine of presetRoutines) {
+      for (const ex of presetRoutine.exercises) {
+        if (ex.name === exerciseName) {
+          // Verifica se a observação atual corresponde à versão em inglês ou português
+          if (ex.notes === note && ex.notesPt) {
+            return language === 'en' ? ex.notes : ex.notesPt;
+          }
+          if (ex.notesPt === note && ex.notes) {
+            return language === 'en' ? ex.notes : ex.notesPt;
+          }
+        }
+      }
+    }
+
+    // Se não encontrar tradução, retorna a observação original
+    return note;
   };
 
   const getFilteredExercises = () => {
@@ -124,6 +282,95 @@ function App() {
   const handleFilterChange = (filter) => {
     setExerciseFilter(filter);
     setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const getFilteredWorkouts = () => {
+    let filtered = workouts;
+    
+    if (historyFilter === 'all') {
+      filtered = workouts;
+    } else if (historyFilter === 'week') {
+      // Últimos 7 dias
+      const now = new Date();
+      const weekAgo = new Date(now);
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      filtered = workouts.filter(workout => {
+        const workoutDate = new Date(workout.date);
+        return workoutDate >= weekAgo;
+      });
+    } else if (historyFilter === 'month') {
+      // Últimos 30 dias
+      const now = new Date();
+      const monthAgo = new Date(now);
+      monthAgo.setDate(monthAgo.getDate() - 30);
+      filtered = workouts.filter(workout => {
+        const workoutDate = new Date(workout.date);
+        return workoutDate >= monthAgo;
+      });
+    }
+    
+    return filtered;
+  };
+
+  const getPaginatedWorkouts = () => {
+    const filtered = getFilteredWorkouts();
+    const startIndex = (historyPage - 1) * historyItemsPerPage;
+    const endIndex = startIndex + historyItemsPerPage;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  const getHistoryTotalPages = () => {
+    const filtered = getFilteredWorkouts();
+    return Math.ceil(filtered.length / historyItemsPerPage);
+  };
+
+  const handleHistoryFilterChange = (filter) => {
+    setHistoryFilter(filter);
+    setHistoryPage(1); // Reset to first page when filter changes
+  };
+
+  const getHistoryStats = () => {
+    const now = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(now);
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    
+    const thisWeek = workouts.filter(w => new Date(w.date) >= weekAgo).length;
+    const thisMonth = workouts.filter(w => new Date(w.date) >= monthAgo).length;
+    const totalExercises = workouts.reduce((sum, w) => sum + w.exercises.length, 0);
+    
+    return {
+      total: workouts.length,
+      thisWeek,
+      thisMonth,
+      totalExercises
+    };
+  };
+
+  const handleDeleteWorkout = async (workoutId) => {
+    if (window.confirm(t('history.confirmDelete'))) {
+      try {
+        await axios.delete(`/api/workouts/${workoutId}`);
+        loadData();
+        alert(t('history.deleteSuccess'));
+      } catch (error) {
+        console.error('Error deleting workout:', error);
+        alert(t('history.deleteError'));
+      }
+    }
+  };
+
+  const handleAddPresetRoutine = async (routineData) => {
+    try {
+      await axios.post('/api/routines', routineData);
+      loadData();
+      setSelectedPresetRoutine(null);
+      alert(t('presetRoutines.addSuccess'));
+    } catch (error) {
+      console.error('Error adding preset routine:', error);
+      alert(t('presetRoutines.addError'));
+    }
   };
 
   return (
@@ -168,16 +415,29 @@ function App() {
           {t('nav.exercises')}
         </button>
         <button 
+          className={activeTab === 'presetRoutines' ? 'active' : ''}
+          onClick={() => setActiveTab('presetRoutines')}
+        >
+          {t('nav.presetRoutines')}
+        </button>
+        <div className="tab-separator"></div>
+        <button 
+          className={activeTab === 'routines' ? 'active' : ''}
+          onClick={() => setActiveTab('routines')}
+        >
+          {t('nav.routines')}
+        </button>
+        <button 
           className={activeTab === 'prs' ? 'active' : ''}
           onClick={() => setActiveTab('prs')}
         >
           {t('nav.prs')}
         </button>
         <button 
-          className={activeTab === 'routines' ? 'active' : ''}
-          onClick={() => setActiveTab('routines')}
+          className={activeTab === 'history' ? 'active' : ''}
+          onClick={() => setActiveTab('history')}
         >
-          {t('nav.routines')}
+          {t('nav.history')}
         </button>
       </nav>
 
@@ -279,7 +539,7 @@ function App() {
                           style={{ cursor: 'pointer' }}
                         >
                           <h3>{getTranslatedExerciseName(ex.name, language)}</h3>
-                          <p className="categoria">{t('exercises.category')}: {ex.category}</p>
+                          <p className="categoria">{t('exercises.category')}: {getCategoryTranslation(ex.category)}</p>
                           {ex.description && <p>{ex.description}</p>}
                         </div>
                       ))}
@@ -364,15 +624,25 @@ function App() {
               <p className="empty-message">{t('routines.empty')}</p>
             ) : (
               <div className="routines-list">
-                {routines.map(routine => (
-                  <div key={routine.id} className="routine-card">
+                {translatedRoutines.map(({ translated, ...routine }) => (
+                    <div key={routine.id} className="routine-card">
                     <div className="routine-header">
                       <div>
-                        <h3>{routine.name}</h3>
-                        {routine.description && <p className="routine-description">{routine.description}</p>}
+                        <h3>{translated.name}</h3>
+                        {translated.description && <p className="routine-description">{translated.description}</p>}
                         <p className="data">{t('routines.created')}: {formatDate(routine.created_at)}</p>
                       </div>
                       <div className="routine-actions">
+                        <button 
+                          className="btn-start"
+                          onClick={() => {
+                            setSelectedRoutine(routine);
+                            setShowStartRoutineModal(true);
+                          }}
+                          title={t('routines.registerRoutine')}
+                        >
+                          ▶️ {t('routines.registerRoutine')}
+                        </button>
                         <button 
                           className="btn-edit"
                           onClick={() => {
@@ -403,16 +673,233 @@ function App() {
                       </div>
                     </div>
                     <div className="routine-exercises">
-                      <h4>{t('routines.exercises')} ({routine.exercises.length})</h4>
-                      <div className="exercicios-treino">
-                        {routine.exercises.map((ex, idx) => (
-                          <div key={idx} className="exercicio-item">
-                            <strong>{idx + 1}. {getTranslatedExerciseName(ex.name, language)}</strong>
-                            <span>{ex.sets}{t('common.sets')} x {ex.reps}{t('common.reps')}</span>
-                            {ex.notes && <p className="exercise-notes">{ex.notes}</p>}
-                          </div>
-                        ))}
+                      <div className="routine-exercises-header">
+                        <h4>{t('routines.exercises')} ({routine.exercises.length})</h4>
+                        <button
+                          className="btn-toggle-exercises"
+                          onClick={() => {
+                            const newExpanded = new Set(expandedRoutines);
+                            if (newExpanded.has(routine.id)) {
+                              newExpanded.delete(routine.id);
+                            } else {
+                              newExpanded.add(routine.id);
+                            }
+                            setExpandedRoutines(newExpanded);
+                          }}
+                          title={expandedRoutines.has(routine.id) ? t('routines.hideExercises') : t('routines.showExercises')}
+                        >
+                          {expandedRoutines.has(routine.id) ? '▼' : '▶'}
+                        </button>
                       </div>
+                      {expandedRoutines.has(routine.id) && (
+                        <div className="exercicios-treino">
+                          {routine.exercises.map((ex, idx) => (
+                            <div key={idx} className="exercicio-item">
+                              <strong>{idx + 1}. {getTranslatedExerciseName(ex.name, language)}</strong>
+                              <span>{ex.sets}{t('common.sets')} x {ex.reps}{t('common.reps')}</span>
+                              {ex.notes && <p className="exercise-notes">{getTranslatedExerciseNote(ex.notes, ex.name)}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'history' && (
+          <div className="section">
+            <div className="section-header">
+              <h2>{t('history.title')}</h2>
+            </div>
+            
+            {workouts.length > 0 && (
+              <>
+                <div className="history-stats">
+                  <div className="stat-card">
+                    <div className="stat-icon">📊</div>
+                    <div className="stat-content">
+                      <div className="stat-value">{getHistoryStats().total}</div>
+                      <div className="stat-label">{t('history.stats.total')}</div>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon">📅</div>
+                    <div className="stat-content">
+                      <div className="stat-value">{getHistoryStats().thisWeek}</div>
+                      <div className="stat-label">{t('history.stats.thisWeek')}</div>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon">📆</div>
+                    <div className="stat-content">
+                      <div className="stat-value">{getHistoryStats().thisMonth}</div>
+                      <div className="stat-label">{t('history.stats.thisMonth')}</div>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon">💪</div>
+                    <div className="stat-content">
+                      <div className="stat-value">{getHistoryStats().totalExercises}</div>
+                      <div className="stat-label">{t('history.stats.totalExercises')}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="filters-container history-filters">
+                  <button
+                    className={`filter-btn ${historyFilter === 'all' ? 'active' : ''}`}
+                    onClick={() => handleHistoryFilterChange('all')}
+                  >
+                    {t('history.filters.all')}
+                  </button>
+                  <button
+                    className={`filter-btn ${historyFilter === 'week' ? 'active' : ''}`}
+                    onClick={() => handleHistoryFilterChange('week')}
+                  >
+                    {t('history.filters.week')}
+                  </button>
+                  <button
+                    className={`filter-btn ${historyFilter === 'month' ? 'active' : ''}`}
+                    onClick={() => handleHistoryFilterChange('month')}
+                  >
+                    {t('history.filters.month')}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {workouts.length === 0 ? (
+              <p className="empty-message">{t('history.empty')}</p>
+            ) : getFilteredWorkouts().length === 0 ? (
+              <p className="empty-message">{t('history.noResults')}</p>
+            ) : (
+              <>
+                <div className="workouts-list">
+                  {getPaginatedWorkouts().map(workout => (
+                  <div key={workout.id} className="workout-card">
+                    <div className="workout-header">
+                      <div>
+                        <h3>{getTranslatedWorkout(workout)}</h3>
+                        <p className="workout-date">{formatDate(workout.date)}</p>
+                      </div>
+                      <div className="workout-actions">
+                        <button 
+                          className="btn-delete-workout"
+                          onClick={() => handleDeleteWorkout(workout.id)}
+                          title={t('history.delete')}
+                        >
+                          🗑️ {t('history.delete')}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="workout-exercises">
+                      <h4>{t('history.exercises')} ({workout.exercises.length})</h4>
+                      <div className="exercicios-treino">
+                        {workout.exercises.map((ex, idx) => {
+                          const isTimeBased = isTimeBasedExercise(ex.name);
+                          const hasSets = ex.workout_sets && ex.workout_sets.length > 0;
+                          return (
+                            <div key={idx} className="exercicio-item">
+                              <div className="exercise-item-header">
+                                <strong>{idx + 1}. {getTranslatedExerciseName(ex.name, language)}</strong>
+                                {hasSets && (
+                                  <button
+                                    className="btn-view-sets"
+                                    onClick={() => {
+                                      setSelectedWorkoutExercise({
+                                        exercise: { id: ex.id, name: ex.name },
+                                        workoutSets: ex.workout_sets
+                                      });
+                                      setShowWorkoutSetsModal(true);
+                                    }}
+                                    title={t('history.sets.viewDetails')}
+                                  >
+                                    📊 {t('history.sets.viewDetails')}
+                                  </button>
+                                )}
+                              </div>
+                              {isTimeBased ? (
+                                <span>
+                                  {ex.sets}{t('common.sets')} x {ex.duration || ex.reps}{t('common.seconds')}
+                                </span>
+                              ) : (
+                                <span>
+                                  {ex.sets}{t('common.sets')} x {ex.reps}{t('common.reps')} @ {ex.weight}{t('common.weight')}
+                                </span>
+                              )}
+                              {ex.notes && <p className="exercise-notes">{getTranslatedExerciseNote(ex.notes, ex.name, workout.preset_id)}</p>}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  ))}
+                </div>
+                
+                {getHistoryTotalPages() > 1 && (
+                  <div className="pagination">
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setHistoryPage(prev => Math.max(1, prev - 1))}
+                      disabled={historyPage === 1}
+                    >
+                      {t('pagination.previous')}
+                    </button>
+                    
+                    <div className="pagination-info">
+                      {t('pagination.page')} {historyPage} {t('pagination.of')} {getHistoryTotalPages()}
+                    </div>
+                    
+                    <button
+                      className="pagination-btn"
+                      onClick={() => setHistoryPage(prev => Math.min(getHistoryTotalPages(), prev + 1))}
+                      disabled={historyPage === getHistoryTotalPages()}
+                    >
+                      {t('pagination.next')}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'presetRoutines' && (
+          <div className="section">
+            <div className="section-header">
+              <h2>{t('presetRoutines.title')}</h2>
+            </div>
+            {presetRoutines.length === 0 ? (
+              <p className="empty-message">{t('presetRoutines.empty')}</p>
+            ) : (
+              <div className="grid">
+                {presetRoutines.map(routine => (
+                  <div 
+                    key={routine.id} 
+                    className="card preset-routine-card"
+                    onClick={() => setSelectedPresetRoutine(routine)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <div className="preset-routine-header">
+                      <h3>{language === 'en' ? routine.name : routine.namePt}</h3>
+                      <div className="preset-routine-badges">
+                        <span className="badge difficulty">{language === 'en' ? routine.difficulty : routine.difficultyPt}</span>
+                        <span className="badge duration">{language === 'en' ? routine.durationEn : routine.duration}</span>
+                      </div>
+                    </div>
+                    <p className="preset-routine-description">
+                      {language === 'en' ? routine.descriptionEn : routine.description}
+                    </p>
+                    <div className="preset-routine-footer">
+                      <span className="exercise-count">
+                        💪 {routine.exercises.length} {t('presetRoutines.exercises')}
+                      </span>
+                      <span className="view-details">{t('presetRoutines.viewDetails')} →</span>
                     </div>
                   </div>
                 ))}
@@ -453,6 +940,53 @@ function App() {
         <ExerciseDetailModal
           exercise={selectedExercise}
           onClose={() => setSelectedExercise(null)}
+        />
+      )}
+
+      {showStartRoutineModal && selectedRoutine && (
+        <StartRoutineModal
+          routine={selectedRoutine}
+          onClose={() => {
+            setShowStartRoutineModal(false);
+            setSelectedRoutine(null);
+          }}
+          onStart={() => {
+            setShowStartRoutineModal(false);
+            setShowExecuteRoutineModal(true);
+          }}
+        />
+      )}
+
+      {showExecuteRoutineModal && selectedRoutine && (
+        <ExecuteRoutineModal
+          routine={selectedRoutine}
+          onClose={() => {
+            setShowExecuteRoutineModal(false);
+            setSelectedRoutine(null);
+          }}
+          onComplete={() => {
+            loadData();
+          }}
+        />
+      )}
+
+      {selectedPresetRoutine && (
+        <PresetRoutineModal
+          routine={selectedPresetRoutine}
+          exercises={exercises}
+          onClose={() => setSelectedPresetRoutine(null)}
+          onAdd={handleAddPresetRoutine}
+        />
+      )}
+
+      {showWorkoutSetsModal && selectedWorkoutExercise && (
+        <WorkoutSetsModal
+          exercise={selectedWorkoutExercise.exercise}
+          workoutSets={selectedWorkoutExercise.workoutSets}
+          onClose={() => {
+            setShowWorkoutSetsModal(false);
+            setSelectedWorkoutExercise(null);
+          }}
         />
       )}
     </div>

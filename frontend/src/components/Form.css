@@ -22,6 +22,18 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
   border: 1px solid #3b82f6;
   animation: slideIn 0.3s ease-out;
+  color: #ffffff;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  color: #ffffff;
+}
+
+.modal-body p {
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.6;
 }
 
 .modal-large {
@@ -134,10 +146,10 @@ form {
 
 .form-actions {
   display: flex;
-  gap: 1rem;
+  gap: 1.5rem;
   justify-content: flex-end;
   margin-top: 2rem;
-  padding-top: 1.5rem;
+  padding: 1.5rem;
   border-top: 1px solid #3b82f6;
 }
 

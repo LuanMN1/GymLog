@@ -2,6 +2,7 @@ import React from 'react';
 import { useLanguage } from '../App';
 import { getTranslatedExerciseName } from '../i18n/exerciseTranslations';
 import { exerciseData } from '../i18n/exerciseData';
+import { getTranslatedMuscleGroups, getTranslatedInstructions } from '../i18n/exerciseDataTranslations';
 import './ExerciseDetailModal.css';
 
 const ExerciseDetailModal = ({ exercise, onClose }) => {
@@ -12,7 +13,8 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
   const exerciseInfo = exerciseData[exercise.name] || {};
   // Try to get image, with fallback
   const tutorialImage = exerciseInfo?.tutorialImage || exerciseInfo?.image || null;
-  const muscleGroups = exerciseInfo?.muscleGroups || [];
+  const muscleGroups = getTranslatedMuscleGroups(exerciseInfo?.muscleGroups || [], language);
+  const instructions = getTranslatedInstructions(exercise.name, language);
   
   // Log for debugging
   if (tutorialImage) {
@@ -91,11 +93,11 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
                   <p>{t('exerciseDetail.imageUnavailable')}</p>
                 </div>
               </div>
-              {exerciseInfo.instructions && (
+              {instructions && instructions.length > 0 && (
                 <div className="instructions">
                   <h4>{t('exerciseDetail.howTo')}</h4>
                   <ol>
-                    {exerciseInfo.instructions.map((instruction, idx) => (
+                    {instructions.map((instruction, idx) => (
                       <li key={idx}>{instruction}</li>
                     ))}
                   </ol>
@@ -111,6 +113,16 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
                 <div className="placeholder-icon">🏋️</div>
                 <p>{t('exerciseDetail.imageUnavailable')}</p>
               </div>
+              {instructions && instructions.length > 0 && (
+                <div className="instructions">
+                  <h4>{t('exerciseDetail.howTo')}</h4>
+                  <ol>
+                    {instructions.map((instruction, idx) => (
+                      <li key={idx}>{instruction}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </div>
           )}
         </div>

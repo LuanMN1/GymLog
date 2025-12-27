@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from models import db, Exercise, Workout, WorkoutExercise, PR, Routine, RoutineExercise
+from models import db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise
 from datetime import datetime
 
 app = Flask(__name__)
@@ -45,13 +45,21 @@ def list_workouts():
         'id': w.id,
         'name': w.name,
         'date': w.date.isoformat(),
+        'preset_id': w.preset_id,
         'exercises': [{
             'id': we.exercise.id,
             'name': we.exercise.name,
             'sets': we.sets,
             'reps': we.reps,
             'weight': we.weight,
-            'notes': we.notes
+            'duration': we.duration,
+            'notes': we.notes,
+            'workout_sets': [{
+                'set_number': ws.set_number,
+                'reps': ws.reps,
+                'weight': ws.weight,
+                'duration': ws.duration
+            } for ws in we.workout_sets]
         } for we in w.exercises]
     } for w in workouts])
 
@@ -60,7 +68,8 @@ def create_workout():
     data = request.json
     workout = Workout(
         name=data['name'],
-        date=datetime.fromisoformat(data['date'])
+        date=datetime.fromisoformat(data['date']),
+        preset_id=data.get('preset_id')
     )
     db.session.add(workout)
     
@@ -71,12 +80,33 @@ def create_workout():
             sets=ex_data.get('sets', 0),
             reps=ex_data.get('reps', 0),
             weight=ex_data.get('weight', 0),
+            duration=ex_data.get('duration', 0),
             notes=ex_data.get('notes', '')
         )
         db.session.add(workout_exercise)
+        db.session.flush()  # Para obter o ID do workout_exercise
+        
+        # Salvar cada série individualmente
+        if 'workout_sets' in ex_data and ex_data['workout_sets']:
+            for set_data in ex_data['workout_sets']:
+                workout_set = WorkoutSet(
+                    workout_exercise_id=workout_exercise.id,
+                    set_number=set_data.get('set_number', 0),
+                    reps=set_data.get('reps', 0),
+                    weight=set_data.get('weight', 0),
+                    duration=set_data.get('duration', 0)
+                )
+                db.session.add(workout_set)
     
     db.session.commit()
     return jsonify({'id': workout.id, 'message': 'Workout created successfully'}), 201
+
+@app.route('/api/workouts/<int:workout_id>', methods=['DELETE'])
+def delete_workout(workout_id):
+    workout = Workout.query.get_or_404(workout_id)
+    db.session.delete(workout)
+    db.session.commit()
+    return jsonify({'message': 'Workout deleted successfully'})
 
 # PR Routes
 @app.route('/api/prs', methods=['GET'])
@@ -125,6 +155,7 @@ def list_routines():
         'id': r.id,
         'name': r.name,
         'description': r.description,
+        'preset_id': r.preset_id,
         'created_at': r.created_at.isoformat(),
         'exercises': [{
             'id': re.exercise.id,
@@ -141,7 +172,8 @@ def create_routine():
     data = request.json
     routine = Routine(
         name=data['name'],
-        description=data.get('description', '')
+        description=data.get('description', ''),
+        preset_id=data.get('preset_id', None)
     )
     db.session.add(routine)
     
@@ -166,6 +198,7 @@ def get_routine(routine_id):
         'id': routine.id,
         'name': routine.name,
         'description': routine.description,
+        'preset_id': routine.preset_id,
         'created_at': routine.created_at.isoformat(),
         'exercises': [{
             'id': re.exercise.id,
@@ -184,6 +217,7 @@ def update_routine(routine_id):
     
     routine.name = data.get('name', routine.name)
     routine.description = data.get('description', routine.description)
+    # Não atualiza preset_id ao editar, mantém o original
     
     # Remove existing exercises
     RoutineExercise.query.filter_by(routine_id=routine_id).delete()

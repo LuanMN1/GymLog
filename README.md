@@ -17,6 +17,12 @@ A fullstack application for managing gym workouts, tracking personal records (PR
 - ✅ Exercise name translations
 - ✅ Forms for creating exercises, PRs, and routines
 - ✅ Edit and delete routines
+- ✅ Workout history with statistics and filters
+- ✅ Preset workout routines library
+- ✅ Dynamic translation for routines and workouts
+- ✅ Individual set tracking for workouts
+- ✅ Exercise notes translation
+- ✅ Collapsible exercise lists in routines
 
 ## Project Structure
 
@@ -82,6 +88,11 @@ Frontend will run on: `http://localhost:3000`
 - `PUT /api/routines/<id>` - Update routine
 - `DELETE /api/routines/<id>` - Delete routine
 
+### Workouts
+- `GET /api/workouts` - List all workouts
+- `POST /api/workouts` - Create new workout
+- `DELETE /api/workouts/<id>` - Delete workout
+
 ### Personal Records
 - `GET /api/prs` - List all PRs
 - `POST /api/prs` - Register new PR
@@ -110,6 +121,15 @@ Language can be changed via the language switcher in the application header.
 - ✅ Additional exercises (Shoulders, Forearms, Core/Abdomen)
 - ✅ Black/Blue color scheme
 - ✅ Clickable exercise cards with detailed information
+- ✅ Workout history screen with statistics
+- ✅ Preset routines feature
+- ✅ Dynamic translation system for routines and workouts
+- ✅ Individual workout set tracking and visualization
+- ✅ Exercise notes translation
+- ✅ Collapsible exercise lists
+- ✅ Workout deletion functionality
+- ✅ History filters (all, week, month)
+- ✅ Workout statistics (total, this week, this month, total exercises)
 - 🔄 Edit and delete exercises and PRs
 - 🔄 Progress charts and statistics
 - 🔄 Search functionality

@@ -8,7 +8,9 @@ export const translations = {
       exercises: "Exercises",
       workouts: "Workouts",
       prs: "Personal Records",
-      routines: "My Workout"
+      routines: "My Workout",
+      history: "History",
+      presetRoutines: "Preset Routines"
     },
     exercises: {
       title: "Registered Exercises",
@@ -55,11 +57,6 @@ export const translations = {
       imageUnavailable: "Tutorial image not available",
       close: "Close"
     },
-    common: {
-      sets: "sets",
-      reps: "reps",
-      weight: "kg"
-    },
     forms: {
       create: "Create",
       update: "Update",
@@ -74,6 +71,12 @@ export const translations = {
       },
       error: {
         createFailed: "Failed to create. Please try again."
+      },
+      confirmClose: {
+        title: "Close without saving?",
+        message: "You have unsaved changes. Are you sure you want to close?",
+        confirm: "Yes, close",
+        cancel: "Cancel"
       },
       exercise: {
         title: "Create Exercise",
@@ -139,7 +142,74 @@ export const translations = {
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this routine?",
       deleteError: "Failed to delete routine",
-      exercises: "Exercises"
+      exercises: "Exercises",
+      showExercises: "Show Exercises",
+      hideExercises: "Hide Exercises",
+      startRoutine: "Start Routine",
+      registerRoutine: "Register Routine",
+      exercise: "Exercise",
+      of: "of",
+      sets: "Sets",
+      addSet: "Add Set",
+      removeSet: "Remove Set",
+      noSets: "No sets added yet. Click 'Add Set' to start recording.",
+      duration: "Duration",
+      timeBased: "Time-based exercise",
+      weightBased: "Weight-based exercise",
+      previous: "Previous",
+      next: "Next",
+      finishWorkout: "Finish Workout",
+      saveError: "Failed to save workout. Please try again."
+    },
+    common: {
+      sets: "sets",
+      reps: "reps",
+      weight: "kg",
+      seconds: "sec"
+    },
+    history: {
+      title: "Workout History",
+      empty: "No workouts registered yet.",
+      noResults: "No workouts found for this filter.",
+      exercises: "Exercises",
+      date: "Date",
+      delete: "Delete",
+      confirmDelete: "Are you sure you want to delete this workout?",
+      deleteError: "Error deleting workout",
+      deleteSuccess: "Workout deleted successfully",
+      stats: {
+        total: "Total Workouts",
+        thisWeek: "This Week",
+        thisMonth: "This Month",
+        totalExercises: "Total Exercises"
+      },
+      filters: {
+        all: "All",
+        week: "This Week",
+        month: "This Month",
+        selectMonth: "Select Month"
+      },
+      sets: {
+        setNumber: "Set",
+        reps: "Reps",
+        weight: "Weight",
+        duration: "Duration",
+        viewDetails: "View Sets",
+        noSets: "No sets recorded for this exercise."
+      }
+    },
+    presetRoutines: {
+      title: "Preset Routines",
+      empty: "No preset routines available.",
+      difficulty: "Difficulty",
+      duration: "Duration",
+      exercises: "Exercises",
+      addToMyRoutines: "Add to My Routines",
+      viewDetails: "View Details",
+      noExercisesFound: "No exercises found. Please create exercises first.",
+      exerciseNotAvailable: "This exercise is not available in your exercise list.",
+      addSuccess: "Routine added successfully!",
+      addError: "Error adding routine."
     }
   },
   'pt-BR': {
@@ -151,7 +221,9 @@ export const translations = {
       exercises: "Exercícios",
       workouts: "Treinos",
       prs: "Recordes Pessoais",
-      routines: "Minha Rotina"
+      routines: "Minha Rotina",
+      history: "Histórico",
+      presetRoutines: "Rotinas Prontas"
     },
     exercises: {
       title: "Exercícios Cadastrados",
@@ -191,8 +263,9 @@ export const translations = {
     },
     common: {
       sets: "séries",
-      reps: "reps",
-      weight: "kg"
+      reps: "repetições",
+      weight: "kg",
+      seconds: "seg"
     },
     forms: {
       create: "Criar",
@@ -207,6 +280,12 @@ export const translations = {
       },
       error: {
         createFailed: "Falha ao criar. Tente novamente."
+      },
+      confirmClose: {
+        title: "Fechar sem salvar?",
+        message: "Você tem alterações não salvas. Tem certeza que deseja fechar?",
+        confirm: "Sim, fechar",
+        cancel: "Cancelar"
       },
       exercise: {
         title: "Criar Exercício",
@@ -272,7 +351,74 @@ export const translations = {
       delete: "Excluir",
       confirmDelete: "Tem certeza que deseja excluir esta rotina?",
       deleteError: "Falha ao excluir rotina",
-      exercises: "Exercícios"
+      exercises: "Exercícios",
+      showExercises: "Mostrar Exercícios",
+      hideExercises: "Ocultar Exercícios",
+      startRoutine: "Iniciar Rotina",
+      registerRoutine: "Registrar Rotina",
+      exercise: "Exercício",
+      of: "de",
+      sets: "Séries",
+      addSet: "Adicionar Série",
+      removeSet: "Remover Série",
+      noSets: "Nenhuma série adicionada ainda. Clique em 'Adicionar Série' para começar.",
+      duration: "Duração",
+      timeBased: "Exercício por tempo",
+      weightBased: "Exercício com peso",
+      previous: "Anterior",
+      next: "Próximo",
+      finishWorkout: "Finalizar Treino",
+      saveError: "Falha ao salvar treino. Tente novamente."
+    },
+    common: {
+      sets: "séries",
+      reps: "repetições",
+      weight: "kg",
+      seconds: "seg"
+    },
+    history: {
+      title: "Histórico de Treinos",
+      empty: "Nenhum treino registrado ainda.",
+      noResults: "Nenhum treino encontrado para este filtro.",
+      exercises: "Exercícios",
+      date: "Data",
+      delete: "Excluir",
+      confirmDelete: "Tem certeza que deseja excluir este treino?",
+      deleteError: "Erro ao excluir treino",
+      deleteSuccess: "Treino excluído com sucesso",
+      stats: {
+        total: "Total de Treinos",
+        thisWeek: "Esta Semana",
+        thisMonth: "Este Mês",
+        totalExercises: "Total de Exercícios"
+      },
+      filters: {
+        all: "Todos",
+        week: "Esta Semana",
+        month: "Este Mês",
+        selectMonth: "Selecionar Mês"
+      },
+      sets: {
+        setNumber: "Série",
+        reps: "Reps",
+        weight: "Carga",
+        duration: "Duração",
+        viewDetails: "Ver Séries",
+        noSets: "Nenhuma série registrada para este exercício."
+      }
+    },
+    presetRoutines: {
+      title: "Rotinas Prontas",
+      empty: "Nenhuma rotina pronta disponível.",
+      difficulty: "Dificuldade",
+      duration: "Duração",
+      exercises: "Exercícios",
+      addToMyRoutines: "Adicionar às Minhas Rotinas",
+      viewDetails: "Ver Detalhes",
+      noExercisesFound: "Nenhum exercício encontrado. Por favor, crie exercícios primeiro.",
+      exerciseNotAvailable: "Este exercício não está disponível na sua lista de exercícios.",
+      addSuccess: "Rotina adicionada com sucesso!",
+      addError: "Erro ao adicionar rotina."
     },
     exerciseDetail: {
       category: "Categoria",
@@ -293,7 +439,9 @@ export const translations = {
       exercises: "Exercícios",
       workouts: "Treinos",
       prs: "Recordes Pessoais",
-      routines: "Minha Rotina"
+      routines: "Minha Rotina",
+      history: "Histórico",
+      presetRoutines: "Rotinas Prontas"
     },
     exercises: {
       title: "Exercícios Registados",
@@ -333,8 +481,9 @@ export const translations = {
     },
     common: {
       sets: "séries",
-      reps: "reps",
-      weight: "kg"
+      reps: "repetições",
+      weight: "kg",
+      seconds: "seg"
     },
     forms: {
       create: "Criar",
@@ -349,6 +498,12 @@ export const translations = {
       },
       error: {
         createFailed: "Falha ao criar. Tente novamente."
+      },
+      confirmClose: {
+        title: "Fechar sem salvar?",
+        message: "Você tem alterações não salvas. Tem certeza que deseja fechar?",
+        confirm: "Sim, fechar",
+        cancel: "Cancelar"
       },
       exercise: {
         title: "Criar Exercício",
@@ -414,7 +569,74 @@ export const translations = {
       delete: "Eliminar",
       confirmDelete: "Tem a certeza que deseja eliminar esta rotina?",
       deleteError: "Falha ao eliminar rotina",
-      exercises: "Exercícios"
+      exercises: "Exercícios",
+      showExercises: "Mostrar Exercícios",
+      hideExercises: "Ocultar Exercícios",
+      startRoutine: "Iniciar Rotina",
+      registerRoutine: "Registrar Rotina",
+      exercise: "Exercício",
+      of: "de",
+      sets: "Séries",
+      addSet: "Adicionar Série",
+      removeSet: "Remover Série",
+      noSets: "Ainda não há séries adicionadas. Clique em 'Adicionar Série' para começar.",
+      duration: "Duração",
+      timeBased: "Exercício por tempo",
+      weightBased: "Exercício com peso",
+      previous: "Anterior",
+      next: "Próximo",
+      finishWorkout: "Finalizar Treino",
+      saveError: "Falha ao guardar treino. Tente novamente."
+    },
+    common: {
+      sets: "séries",
+      reps: "repetições",
+      weight: "kg",
+      seconds: "seg"
+    },
+    history: {
+      title: "Histórico de Treinos",
+      empty: "Ainda não há treinos registados.",
+      noResults: "Não há treinos para este filtro.",
+      exercises: "Exercícios",
+      date: "Data",
+      delete: "Eliminar",
+      confirmDelete: "Tem a certeza que deseja eliminar este treino?",
+      deleteError: "Erro ao eliminar treino",
+      deleteSuccess: "Treino eliminado com sucesso",
+      stats: {
+        total: "Total de Treinos",
+        thisWeek: "Esta Semana",
+        thisMonth: "Este Mês",
+        totalExercises: "Total de Exercícios"
+      },
+      filters: {
+        all: "Todos",
+        week: "Esta Semana",
+        month: "Este Mês",
+        selectMonth: "Selecionar Mês"
+      },
+      sets: {
+        setNumber: "Série",
+        reps: "Reps",
+        weight: "Carga",
+        duration: "Duração",
+        viewDetails: "Ver Séries",
+        noSets: "Nenhuma série registrada para este exercício."
+      }
+    },
+    presetRoutines: {
+      title: "Rotinas Prontas",
+      empty: "Ainda não há rotinas prontas disponíveis.",
+      difficulty: "Dificuldade",
+      duration: "Duração",
+      exercises: "Exercícios",
+      addToMyRoutines: "Adicionar às Minhas Rotinas",
+      viewDetails: "Ver Detalhes",
+      noExercisesFound: "Nenhum exercício encontrado. Por favor, crie exercícios primeiro.",
+      exerciseNotAvailable: "Este exercício não está disponível na sua lista de exercícios.",
+      addSuccess: "Rotina adicionada com sucesso!",
+      addError: "Erro ao adicionar rotina."
     },
     exerciseDetail: {
       category: "Categoria",

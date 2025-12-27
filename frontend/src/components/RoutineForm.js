@@ -19,6 +19,44 @@ const RoutineForm = ({ onClose, onSuccess, routine = null, exercises: availableE
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  
+  // Verifica se há mudanças não salvas
+  const hasUnsavedChanges = () => {
+    if (routine) {
+      // Editando rotina existente
+      const originalData = {
+        name: routine.name || '',
+        description: routine.description || '',
+        exercises: routine.exercises?.map((ex, idx) => ({
+          exercise_id: ex.id || ex.exercise_id,
+          sets: ex.sets || 0,
+          reps: ex.reps || 0,
+          order: idx,
+          notes: ex.notes || ''
+        })) || []
+      };
+      return JSON.stringify(formData) !== JSON.stringify(originalData);
+    } else {
+      // Criando nova rotina
+      return formData.name.trim() !== '' || 
+             formData.description.trim() !== '' || 
+             formData.exercises.length > 0;
+    }
+  };
+
+  const handleCloseClick = () => {
+    if (hasUnsavedChanges()) {
+      setShowConfirmClose(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setShowConfirmClose(false);
+    onClose();
+  };
 
   const addExercise = () => {
     setFormData({
@@ -92,12 +130,13 @@ const RoutineForm = ({ onClose, onSuccess, routine = null, exercises: availableE
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>{routine ? t('forms.routine.editTitle') : t('forms.routine.title')}</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
-        </div>
+    <>
+      <div className="modal-overlay">
+        <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <h2>{routine ? t('forms.routine.editTitle') : t('forms.routine.title')}</h2>
+            <button className="close-btn" onClick={handleCloseClick}>×</button>
+          </div>
         
         <form onSubmit={handleSubmit}>
           {error && <div className="error-message">{error}</div>}
@@ -222,7 +261,7 @@ const RoutineForm = ({ onClose, onSuccess, routine = null, exercises: availableE
           </div>
 
           <div className="form-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>
+            <button type="button" className="btn-secondary" onClick={handleCloseClick}>
               {t('forms.cancel')}
             </button>
             <button type="submit" className="btn-primary" disabled={loading}>
@@ -230,8 +269,39 @@ const RoutineForm = ({ onClose, onSuccess, routine = null, exercises: availableE
             </button>
           </div>
         </form>
+        </div>
       </div>
-    </div>
+
+      {showConfirmClose && (
+        <div className="modal-overlay" onClick={() => setShowConfirmClose(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t('forms.confirmClose.title')}</h2>
+              <button className="close-btn" onClick={() => setShowConfirmClose(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>{t('forms.confirmClose.message')}</p>
+            </div>
+            <div className="form-actions">
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={() => setShowConfirmClose(false)}
+              >
+                {t('forms.confirmClose.cancel')}
+              </button>
+              <button 
+                type="button" 
+                className="btn-primary" 
+                onClick={handleConfirmClose}
+              >
+                {t('forms.confirmClose.confirm')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
