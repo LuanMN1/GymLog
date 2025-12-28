@@ -65,8 +65,9 @@ class PR(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False)
-    weight = db.Column(db.Float, nullable=False)
+    weight = db.Column(db.Float, default=0)  # Changed to allow 0 for time-based exercises
     reps = db.Column(db.Integer, default=1)
+    duration = db.Column(db.Integer, default=0)  # Duration in seconds for time-based exercises
     date = db.Column(db.DateTime, nullable=False, default=db.func.now())
     notes = db.Column(db.Text)
     

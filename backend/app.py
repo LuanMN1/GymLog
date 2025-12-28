@@ -118,6 +118,7 @@ def list_prs():
         'exercise_name': p.exercise.name,
         'weight': p.weight,
         'reps': p.reps,
+        'duration': p.duration,
         'date': p.date.isoformat(),
         'notes': p.notes
     } for p in prs])
@@ -127,14 +128,51 @@ def create_pr():
     data = request.json
     pr = PR(
         exercise_id=data['exercise_id'],
-        weight=data['weight'],
+        weight=data.get('weight', 0),
         reps=data.get('reps', 1),
+        duration=data.get('duration', 0),
         date=datetime.fromisoformat(data.get('date', datetime.now().isoformat())),
         notes=data.get('notes', '')
     )
     db.session.add(pr)
     db.session.commit()
     return jsonify({'id': pr.id, 'message': 'PR registered successfully'}), 201
+
+@app.route('/api/prs/<int:pr_id>', methods=['GET'])
+def get_pr(pr_id):
+    pr = PR.query.get_or_404(pr_id)
+    return jsonify({
+        'id': pr.id,
+        'exercise_id': pr.exercise_id,
+        'exercise_name': pr.exercise.name,
+        'weight': pr.weight,
+        'reps': pr.reps,
+        'duration': pr.duration,
+        'date': pr.date.isoformat(),
+        'notes': pr.notes
+    })
+
+@app.route('/api/prs/<int:pr_id>', methods=['PUT'])
+def update_pr(pr_id):
+    pr = PR.query.get_or_404(pr_id)
+    data = request.json
+    
+    pr.exercise_id = data.get('exercise_id', pr.exercise_id)
+    pr.weight = data.get('weight', pr.weight)
+    pr.reps = data.get('reps', pr.reps)
+    pr.duration = data.get('duration', pr.duration)
+    pr.date = datetime.fromisoformat(data.get('date', pr.date.isoformat()))
+    pr.notes = data.get('notes', pr.notes)
+    
+    db.session.commit()
+    return jsonify({'message': 'PR updated successfully'})
+
+@app.route('/api/prs/<int:pr_id>', methods=['DELETE'])
+def delete_pr(pr_id):
+    pr = PR.query.get_or_404(pr_id)
+    db.session.delete(pr)
+    db.session.commit()
+    return jsonify({'message': 'PR deleted successfully'})
 
 @app.route('/api/prs/exercise/<int:exercise_id>', methods=['GET'])
 def prs_by_exercise(exercise_id):
@@ -143,6 +181,7 @@ def prs_by_exercise(exercise_id):
         'id': p.id,
         'weight': p.weight,
         'reps': p.reps,
+        'duration': p.duration,
         'date': p.date.isoformat(),
         'notes': p.notes
     } for p in prs])

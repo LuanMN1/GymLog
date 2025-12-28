@@ -757,3 +757,5 @@ export const getTranslatedInstructions = (exerciseName, language) => {
   return translations.instructions[exerciseName] || [];
 };
 
+
+

@@ -634,8 +634,26 @@
   border: 1px solid #60a5fa;
 }
 
+.pr-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.pr-card-header > div:first-child {
+  flex: 1;
+}
+
+.pr-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
 .pr-card h3 {
   color: white;
+  margin: 0 0 0.5rem 0;
 }
 
 .pr-value {

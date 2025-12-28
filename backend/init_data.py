@@ -122,23 +122,12 @@ def init_data():
         
         db.session.commit()
         
-        # Create sample PRs
-        prs_data = [
-            {'exercise_id': exercises[0].id, 'weight': 85, 'reps': 8, 'date': today - timedelta(days=5)},
-            {'exercise_id': exercises[1].id, 'weight': 125, 'reps': 5, 'date': today - timedelta(days=3)},
-            {'exercise_id': exercises[2].id, 'weight': 155, 'reps': 6, 'date': today - timedelta(days=1)},
-        ]
-        
-        for pr_data in prs_data:
-            pr = PR(**pr_data)
-            db.session.add(pr)
-        
-        db.session.commit()
+        # No sample PRs - user will add their own
         
         print("Sample data created successfully!")
         print(f"   - {len(exercises)} exercises")
         print(f"   - {len(workouts_data)} workouts")
-        print(f"   - {len(prs_data)} PRs")
+        print("   - 0 PRs (user will add their own)")
 
 if __name__ == '__main__':
     init_data()

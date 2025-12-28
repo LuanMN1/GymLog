@@ -191,6 +191,32 @@ form {
   border-color: #60a5fa;
 }
 
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.6);
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+}
+
+.confirm-modal {
+  max-width: 450px;
+}
+
+.confirm-modal .modal-body {
+  padding: 1.5rem;
+}
+
+.confirm-modal .modal-body p {
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
 .exercises-section {
   margin-top: 1.5rem;
 }

@@ -46,7 +46,11 @@ export const translations = {
       title: "Personal Records (PRs)",
       empty: "No PRs registered yet.",
       reps: "reps",
-      needExercises: "Create at least one exercise first"
+      needExercises: "Create at least one exercise first",
+      edit: "Edit",
+      delete: "Delete",
+      confirmDelete: "Are you sure you want to delete this PR?",
+      deleteError: "Failed to delete PR"
     },
     exerciseDetail: {
       category: "Category",
@@ -67,6 +71,7 @@ export const translations = {
         nameRequired: "Name is required",
         exerciseRequired: "Please select an exercise",
         weightRequired: "Weight must be greater than 0",
+        durationRequired: "Duration must be greater than 0",
         atLeastOneExercise: "Add at least one exercise to the workout"
       },
       error: {
@@ -105,13 +110,18 @@ export const translations = {
       },
       pr: {
         title: "Register Personal Record",
+        editTitle: "Edit Personal Record",
         exercise: "Exercise",
         selectExercise: "Choose an exercise...",
         weight: "Weight",
         reps: "Repetitions",
+        minutes: "Minutes",
+        seconds: "Seconds",
         date: "Date",
         notes: "Notes",
-        notesPlaceholder: "Optional notes about this PR..."
+        notesPlaceholder: "Optional notes about this PR...",
+        timeBased: "Time-based exercise",
+        weightBased: "Weight-based exercise"
       },
       routine: {
         title: "Create Routine",
@@ -165,7 +175,9 @@ export const translations = {
       sets: "sets",
       reps: "reps",
       weight: "kg",
-      seconds: "sec"
+      seconds: "sec",
+      delete: "Delete",
+      confirm: "Confirm"
     },
     history: {
       title: "Workout History",
@@ -259,13 +271,19 @@ export const translations = {
       title: "Recordes Pessoais (PRs)",
       empty: "Nenhum PR registrado ainda.",
       reps: "reps",
-      needExercises: "Crie pelo menos um exercício primeiro"
+      needExercises: "Crie pelo menos um exercício primeiro",
+      edit: "Editar",
+      delete: "Deletar",
+      confirmDelete: "Tem certeza que deseja deletar este PR?",
+      deleteError: "Erro ao deletar PR"
     },
     common: {
       sets: "séries",
       reps: "repetições",
       weight: "kg",
-      seconds: "seg"
+      seconds: "seg",
+      delete: "Deletar",
+      confirm: "Confirmar"
     },
     forms: {
       create: "Criar",
@@ -276,6 +294,7 @@ export const translations = {
         nameRequired: "Nome é obrigatório",
         exerciseRequired: "Por favor, selecione um exercício",
         weightRequired: "O peso deve ser maior que 0",
+        durationRequired: "A duração deve ser maior que 0",
         atLeastOneExercise: "Adicione pelo menos um exercício ao treino"
       },
       error: {
@@ -314,13 +333,18 @@ export const translations = {
       },
       pr: {
         title: "Registrar Recorde Pessoal",
+        editTitle: "Editar Recorde Pessoal",
         exercise: "Exercício",
         selectExercise: "Escolha um exercício...",
         weight: "Peso",
         reps: "Repetições",
+        minutes: "Minutos",
+        seconds: "Segundos",
         date: "Data",
         notes: "Observações",
-        notesPlaceholder: "Observações opcionais sobre este PR..."
+        notesPlaceholder: "Observações opcionais sobre este PR...",
+        timeBased: "Exercício baseado em tempo",
+        weightBased: "Exercício com peso"
       },
       routine: {
         title: "Criar Rotina",
@@ -374,7 +398,9 @@ export const translations = {
       sets: "séries",
       reps: "repetições",
       weight: "kg",
-      seconds: "seg"
+      seconds: "seg",
+      delete: "Deletar",
+      confirm: "Confirmar"
     },
     history: {
       title: "Histórico de Treinos",
@@ -477,13 +503,19 @@ export const translations = {
       title: "Recordes Pessoais (PRs)",
       empty: "Ainda não há PRs registados.",
       reps: "reps",
-      needExercises: "Crie pelo menos um exercício primeiro"
+      needExercises: "Crie pelo menos um exercício primeiro",
+      edit: "Editar",
+      delete: "Eliminar",
+      confirmDelete: "Tem a certeza que deseja eliminar este PR?",
+      deleteError: "Erro ao eliminar PR"
     },
     common: {
       sets: "séries",
       reps: "repetições",
       weight: "kg",
-      seconds: "seg"
+      seconds: "seg",
+      delete: "Deletar",
+      confirm: "Confirmar"
     },
     forms: {
       create: "Criar",
@@ -494,6 +526,7 @@ export const translations = {
         nameRequired: "Nome é obrigatório",
         exerciseRequired: "Por favor, selecione um exercício",
         weightRequired: "O peso deve ser maior que 0",
+        durationRequired: "A duração deve ser maior que 0",
         atLeastOneExercise: "Adicione pelo menos um exercício ao treino"
       },
       error: {
@@ -532,13 +565,18 @@ export const translations = {
       },
       pr: {
         title: "Registar Recorde Pessoal",
+        editTitle: "Editar Recorde Pessoal",
         exercise: "Exercício",
         selectExercise: "Escolha um exercício...",
         weight: "Peso",
         reps: "Repetições",
+        minutes: "Minutos",
+        seconds: "Segundos",
         date: "Data",
         notes: "Observações",
-        notesPlaceholder: "Observações opcionais sobre este PR..."
+        notesPlaceholder: "Observações opcionais sobre este PR...",
+        timeBased: "Exercício baseado em tempo",
+        weightBased: "Exercício com peso"
       },
       routine: {
         title: "Criar Rotina",
@@ -592,7 +630,9 @@ export const translations = {
       sets: "séries",
       reps: "repetições",
       weight: "kg",
-      seconds: "seg"
+      seconds: "seg",
+      delete: "Deletar",
+      confirm: "Confirmar"
     },
     history: {
       title: "Histórico de Treinos",

@@ -12,6 +12,7 @@ import StartRoutineModal from './components/StartRoutineModal';
 import ExecuteRoutineModal from './components/ExecuteRoutineModal';
 import PresetRoutineModal from './components/PresetRoutineModal';
 import WorkoutSetsModal from './components/WorkoutSetsModal';
+import ConfirmModal from './components/ConfirmModal';
 import { presetRoutines } from './data/presetRoutines';
 
 const LanguageContext = createContext();
@@ -59,6 +60,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('exercises');
   const [showExerciseForm, setShowExerciseForm] = useState(false);
   const [showPRForm, setShowPRForm] = useState(false);
+  const [editingPR, setEditingPR] = useState(null);
   const [showRoutineForm, setShowRoutineForm] = useState(false);
   const [editingRoutine, setEditingRoutine] = useState(null);
   const [selectedExercise, setSelectedExercise] = useState(null);
@@ -72,6 +74,8 @@ function App() {
   const [exerciseFilter, setExerciseFilter] = useState('all');
   const [historyFilter, setHistoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showConfirmDeletePR, setShowConfirmDeletePR] = useState(false);
+  const [prToDelete, setPrToDelete] = useState(null);
   const [historyPage, setHistoryPage] = useState(1);
   const itemsPerPage = 6; // 2 linhas x 3 colunas (3 em cima, 3 embaixo)
   const historyItemsPerPage = 3; // Máximo 3 treinos por página no histórico
@@ -581,7 +585,10 @@ function App() {
               <h2>{t('prs.title')}</h2>
               <button 
                 className="btn-create" 
-                onClick={() => setShowPRForm(true)}
+                onClick={() => {
+                  setEditingPR(null);
+                  setShowPRForm(true);
+                }}
                 disabled={exercises.length === 0}
                 title={exercises.length === 0 ? t('prs.needExercises') : ''}
               >
@@ -592,13 +599,56 @@ function App() {
               <p className="empty-message">{t('prs.empty')}</p>
             ) : (
               <div className="grid">
-                {prs.map(pr => (
-                  <div key={pr.id} className="card pr-card">
-                    <h3>{getTranslatedExerciseName(pr.exercise_name, language)}</h3>
-                    <p className="pr-value">{pr.weight}{t('common.weight')} x {pr.reps} {t('prs.reps')}</p>
-                    <p className="data">{formatDate(pr.date)}</p>
-                  </div>
-                ))}
+                {prs.map(pr => {
+                  const exercise = exercises.find(ex => ex.id === pr.exercise_id);
+                  const isTimeBased = exercise ? isTimeBasedExercise(exercise.name) : false;
+                  const formatDuration = (seconds) => {
+                    if (seconds < 60) {
+                      return `${seconds}${t('common.seconds')}`;
+                    }
+                    const minutes = Math.floor(seconds / 60);
+                    const secs = seconds % 60;
+                    return secs > 0 ? `${minutes}m ${secs}${t('common.seconds')}` : `${minutes}m`;
+                  };
+                  
+                  return (
+                    <div key={pr.id} className="card pr-card">
+                      <div className="pr-card-header">
+                        <div>
+                          <h3>{getTranslatedExerciseName(pr.exercise_name, language)}</h3>
+                          {isTimeBased && pr.duration > 0 ? (
+                            <p className="pr-value">{formatDuration(pr.duration)}</p>
+                          ) : (
+                            <p className="pr-value">{pr.weight}{t('common.weight')} x {pr.reps} {t('prs.reps')}</p>
+                          )}
+                          <p className="data">{formatDate(pr.date)}</p>
+                        </div>
+                        <div className="pr-card-actions">
+                          <button 
+                            className="btn-edit"
+                            onClick={() => {
+                              setEditingPR(pr);
+                              setShowPRForm(true);
+                            }}
+                            title={t('prs.edit')}
+                          >
+                            ✏️
+                          </button>
+                          <button 
+                            className="btn-delete"
+                            onClick={() => {
+                              setPrToDelete(pr);
+                              setShowConfirmDeletePR(true);
+                            }}
+                            title={t('prs.delete')}
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -918,9 +968,13 @@ function App() {
 
       {showPRForm && (
         <PRForm
-          onClose={() => setShowPRForm(false)}
+          onClose={() => {
+            setShowPRForm(false);
+            setEditingPR(null);
+          }}
           onSuccess={loadData}
           exercises={exercises}
+          editingPR={editingPR}
         />
       )}
 
@@ -987,6 +1041,29 @@ function App() {
             setShowWorkoutSetsModal(false);
             setSelectedWorkoutExercise(null);
           }}
+        />
+      )}
+
+      {showConfirmDeletePR && prToDelete && (
+        <ConfirmModal
+          title={t('prs.delete')}
+          message={t('prs.confirmDelete')}
+          onConfirm={async () => {
+            try {
+              await axios.delete(`/api/prs/${prToDelete.id}`);
+              loadData();
+              setShowConfirmDeletePR(false);
+              setPrToDelete(null);
+            } catch (error) {
+              console.error('Error deleting PR:', error);
+              alert(t('prs.deleteError'));
+            }
+          }}
+          onCancel={() => {
+            setShowConfirmDeletePR(false);
+            setPrToDelete(null);
+          }}
+          confirmText={t('common.delete')}
         />
       )}
     </div>
