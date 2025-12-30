@@ -14,6 +14,18 @@ import PresetRoutineModal from './components/PresetRoutineModal';
 import WorkoutSetsModal from './components/WorkoutSetsModal';
 import ConfirmModal from './components/ConfirmModal';
 import { presetRoutines } from './data/presetRoutines';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 const LanguageContext = createContext();
 
@@ -352,6 +364,195 @@ function App() {
     };
   };
 
+  // Funções para preparar dados de progresso
+  const getWorkoutVolumeData = () => {
+    if (!workouts || workouts.length === 0) return [];
+    
+    const sortedWorkouts = [...workouts].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const volumeByDate = {};
+    
+    sortedWorkouts.forEach(workout => {
+      if (!workout.date || !workout.exercises) return;
+      
+      // Normalizar data para agrupar por dia (sem hora)
+      const workoutDate = new Date(workout.date);
+      workoutDate.setHours(0, 0, 0, 0);
+      const dateKey = workoutDate.getTime();
+      const dateLabel = workoutDate.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), { month: 'short', day: 'numeric' });
+      
+      let totalVolume = 0;
+      
+      workout.exercises.forEach(ex => {
+        if (!ex) return;
+        
+        const isTimeBased = isTimeBasedExercise(ex.name);
+        
+        // Se tiver workout_sets, usar eles (dados mais precisos)
+        if (ex.workout_sets && ex.workout_sets.length > 0) {
+          ex.workout_sets.forEach(set => {
+            if (set && !isTimeBased && set.weight && set.reps && set.weight > 0 && set.reps > 0) {
+              totalVolume += parseFloat(set.weight) * parseInt(set.reps);
+            }
+          });
+        } else {
+          // Fallback: usar dados do WorkoutExercise (para treinos antigos ou sem séries individuais)
+          if (!isTimeBased && ex.weight && ex.reps && ex.sets) {
+            const weight = parseFloat(ex.weight) || 0;
+            const reps = parseInt(ex.reps) || 0;
+            const sets = parseInt(ex.sets) || 0;
+            if (weight > 0 && reps > 0 && sets > 0) {
+              totalVolume += weight * reps * sets;
+            }
+          }
+        }
+      });
+      
+      if (totalVolume > 0) {
+        if (volumeByDate[dateKey]) {
+          volumeByDate[dateKey].volume += totalVolume;
+        } else {
+          volumeByDate[dateKey] = { date: dateLabel, volume: totalVolume, timestamp: dateKey };
+        }
+      }
+    });
+    
+    return Object.values(volumeByDate)
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .map(({ date, volume }) => ({
+        date,
+        volume: Math.round(volume)
+      }));
+  };
+
+  const getPRProgressData = () => {
+    const sortedPRs = [...prs].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const prByExercise = {};
+    
+    sortedPRs.forEach(pr => {
+      const exerciseName = getTranslatedExerciseName(pr.exercise_name, language);
+      if (!prByExercise[exerciseName]) {
+        prByExercise[exerciseName] = [];
+      }
+      
+      const exercise = exercises.find(ex => ex.id === pr.exercise_id);
+      const isTimeBased = exercise ? isTimeBasedExercise(exercise.name) : false;
+      
+      prByExercise[exerciseName].push({
+        date: new Date(pr.date).toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), { month: 'short', day: 'numeric' }),
+        value: isTimeBased && pr.duration ? pr.duration : pr.weight,
+        reps: pr.reps,
+        isTimeBased
+      });
+    });
+    
+    return prByExercise;
+  };
+
+  const getWorkoutsPerWeekData = () => {
+    const workoutsByWeek = {};
+    
+    workouts.forEach(workout => {
+      const date = new Date(workout.date);
+      const weekStart = new Date(date);
+      weekStart.setDate(date.getDate() - date.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const weekKey = weekStart.getTime(); // Usar timestamp para ordenação
+      const weekLabel = weekStart.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), { month: 'short', day: 'numeric' });
+      
+      if (workoutsByWeek[weekKey]) {
+        workoutsByWeek[weekKey].count++;
+      } else {
+        workoutsByWeek[weekKey] = { week: weekLabel, count: 1, timestamp: weekKey };
+      }
+    });
+    
+    return Object.values(workoutsByWeek)
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(-12) // Últimas 12 semanas
+      .map(({ week, count }) => ({ week, count }));
+  };
+
+  const getTopExercisesData = () => {
+    const exerciseCounts = {};
+    
+    workouts.forEach(workout => {
+      workout.exercises.forEach(ex => {
+        const exerciseName = getTranslatedExerciseName(ex.name, language);
+        if (exerciseCounts[exerciseName]) {
+          exerciseCounts[exerciseName]++;
+        } else {
+          exerciseCounts[exerciseName] = 1;
+        }
+      });
+    });
+    
+    return Object.entries(exerciseCounts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10); // Top 10 exercícios
+  };
+
+  const getProgressStats = () => {
+    const now = new Date();
+    const weekAgo = new Date(now);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const monthAgo = new Date(now);
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    
+    const recentWorkouts = workouts.filter(w => w && w.date && new Date(w.date) >= monthAgo);
+    let totalVolume = 0;
+    let totalSets = 0;
+    
+    recentWorkouts.forEach(workout => {
+      if (!workout.exercises) return;
+      
+      workout.exercises.forEach(ex => {
+        if (!ex) return;
+        
+        const isTimeBased = isTimeBasedExercise(ex.name);
+        
+        // Se tiver workout_sets, usar eles (dados mais precisos)
+        if (ex.workout_sets && ex.workout_sets.length > 0) {
+          ex.workout_sets.forEach(set => {
+            if (set && !isTimeBased && set.weight && set.reps) {
+              const weight = parseFloat(set.weight) || 0;
+              const reps = parseInt(set.reps) || 0;
+              if (weight > 0 && reps > 0) {
+                totalVolume += weight * reps;
+                totalSets++;
+              }
+            }
+          });
+        } else {
+          // Fallback: usar dados do WorkoutExercise (para treinos antigos ou sem séries individuais)
+          if (!isTimeBased && ex.weight && ex.reps && ex.sets) {
+            const weight = parseFloat(ex.weight) || 0;
+            const reps = parseInt(ex.reps) || 0;
+            const sets = parseInt(ex.sets) || 0;
+            if (weight > 0 && reps > 0 && sets > 0) {
+              totalVolume += weight * reps * sets;
+              totalSets += sets;
+            }
+          }
+        }
+      });
+    });
+    
+    const avgVolumePerWorkout = recentWorkouts.length > 0 ? Math.round(totalVolume / recentWorkouts.length) : 0;
+    const totalPRs = prs ? prs.length : 0;
+    const recentPRs = prs ? prs.filter(pr => pr && pr.date && new Date(pr.date) >= monthAgo).length : 0;
+    
+    return {
+      totalWorkouts: workouts ? workouts.length : 0,
+      recentWorkouts: recentWorkouts.length,
+      totalVolume: Math.round(totalVolume),
+      avgVolumePerWorkout,
+      totalSets,
+      totalPRs,
+      recentPRs
+    };
+  };
+
   const handleDeleteWorkout = async (workoutId) => {
     if (window.confirm(t('history.confirmDelete'))) {
       try {
@@ -381,9 +582,8 @@ function App() {
     <div className="App">
       <header className="App-header">
         <div className="header-content">
-          <div>
-            <h1>💪 {t('app.title')}</h1>
-            <p>{t('app.subtitle')}</p>
+          <div className="logo-container">
+            <img src={require('./assets/logo.png')} alt={t('app.title')} className="app-logo" />
           </div>
           <div className="language-switcher">
             <button 
@@ -436,6 +636,12 @@ function App() {
           onClick={() => setActiveTab('prs')}
         >
           {t('nav.prs')}
+        </button>
+        <button 
+          className={activeTab === 'progress' ? 'active' : ''}
+          onClick={() => setActiveTab('progress')}
+        >
+          {t('nav.progress')}
         </button>
         <button 
           className={activeTab === 'history' ? 'active' : ''}
@@ -757,6 +963,163 @@ function App() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'progress' && (
+          <div className="section">
+            <div className="section-header">
+              <h2>{t('progress.title')}</h2>
+            </div>
+            
+            <div className="progress-stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">💪</div>
+                <div className="stat-content">
+                  <div className="stat-value">{getProgressStats().totalWorkouts}</div>
+                  <div className="stat-label">{t('progress.stats.totalWorkouts')}</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">📊</div>
+                <div className="stat-content">
+                  <div className="stat-value">{getProgressStats().totalVolume.toLocaleString()}</div>
+                  <div className="stat-label">{t('progress.stats.totalVolume')}</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">🏆</div>
+                <div className="stat-content">
+                  <div className="stat-value">{getProgressStats().totalPRs}</div>
+                  <div className="stat-label">{t('progress.stats.totalPRs')}</div>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">📈</div>
+                <div className="stat-content">
+                  <div className="stat-value">{getProgressStats().avgVolumePerWorkout.toLocaleString()}</div>
+                  <div className="stat-label">{t('progress.stats.avgVolume')}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="charts-container">
+              <div className="chart-card">
+                <h3>{t('progress.charts.volumeOverTime')}</h3>
+                {getWorkoutVolumeData().length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={getWorkoutVolumeData()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.3} />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="#60a5fa"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        stroke="#60a5fa"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1a1a1a', 
+                          border: '1px solid #3b82f6',
+                          borderRadius: '8px',
+                          color: '#60a5fa'
+                        }}
+                      />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="volume" 
+                        stroke="#3b82f6" 
+                        strokeWidth={3}
+                        dot={{ fill: '#60a5fa', r: 4 }}
+                        name={t('progress.charts.volume')}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="empty-chart">{t('progress.charts.noData')}</p>
+                )}
+              </div>
+
+              <div className="chart-card">
+                <h3>{t('progress.charts.workoutsPerWeek')}</h3>
+                {getWorkoutsPerWeekData().length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={getWorkoutsPerWeekData()}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.3} />
+                      <XAxis 
+                        dataKey="week" 
+                        stroke="#60a5fa"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        stroke="#60a5fa"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1a1a1a', 
+                          border: '1px solid #3b82f6',
+                          borderRadius: '8px',
+                          color: '#60a5fa'
+                        }}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="count" 
+                        fill="#3b82f6"
+                        name={t('progress.charts.workouts')}
+                        radius={[8, 8, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="empty-chart">{t('progress.charts.noData')}</p>
+                )}
+              </div>
+
+              <div className="chart-card">
+                <h3>{t('progress.charts.topExercises')}</h3>
+                {getTopExercisesData().length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={getTopExercisesData()} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.3} />
+                      <XAxis 
+                        type="number"
+                        stroke="#60a5fa"
+                        style={{ fontSize: '12px' }}
+                      />
+                      <YAxis 
+                        type="category"
+                        dataKey="name" 
+                        stroke="#60a5fa"
+                        style={{ fontSize: '12px' }}
+                        width={150}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          backgroundColor: '#1a1a1a', 
+                          border: '1px solid #3b82f6',
+                          borderRadius: '8px',
+                          color: '#60a5fa'
+                        }}
+                      />
+                      <Legend />
+                      <Bar 
+                        dataKey="count" 
+                        fill="#60a5fa"
+                        name={t('progress.charts.timesPerformed')}
+                        radius={[0, 8, 8, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <p className="empty-chart">{t('progress.charts.noData')}</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

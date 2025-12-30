@@ -19,6 +19,32 @@
   gap: 1rem;
 }
 
+.logo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.app-logo {
+  height: 120px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(59, 130, 246, 0.3));
+  transition: all 0.3s ease;
+}
+
+.app-logo:hover {
+  filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.5));
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .app-logo {
+    height: 80px;
+  }
+}
+
 .App-header h1 {
   font-size: 3rem;
   margin-bottom: 0.5rem;
@@ -358,7 +384,8 @@
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
-.history-stats {
+.history-stats,
+.progress-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
@@ -949,6 +976,68 @@
   .exercicio-item span {
     text-align: left;
     width: 100%;
+  }
+}
+
+/* Progress Charts Styles */
+.charts-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.chart-card {
+  background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(30, 58, 138, 0.3) 50%, rgba(15, 23, 42, 0.8) 100%);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 20px rgba(59, 130, 246, 0.2);
+  border: 2px solid rgba(59, 130, 246, 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chart-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4);
+  border-color: #60a5fa;
+}
+
+.chart-card h3 {
+  color: #60a5fa;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.empty-chart {
+  text-align: center;
+  color: #a0a0a0;
+  font-style: italic;
+  padding: 3rem 1rem;
+  font-size: 1rem;
+}
+
+@media (max-width: 768px) {
+  .charts-container {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .chart-card {
+    padding: 1.5rem;
+  }
+
+  .chart-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .progress-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
   }
 }
 

@@ -9,6 +9,7 @@ export const translations = {
       workouts: "Workouts",
       prs: "Personal Records",
       routines: "My Workout",
+      progress: "Progress",
       history: "History",
       presetRoutines: "Preset Routines"
     },
@@ -179,6 +180,24 @@ export const translations = {
       delete: "Delete",
       confirm: "Confirm"
     },
+    progress: {
+      title: "Progress Charts and Statistics",
+      stats: {
+        totalWorkouts: "Total Workouts",
+        totalVolume: "Total Volume (kg)",
+        totalPRs: "Total PRs",
+        avgVolume: "Avg Volume/Workout"
+      },
+      charts: {
+        volumeOverTime: "Volume Over Time",
+        workoutsPerWeek: "Workouts Per Week",
+        topExercises: "Top Exercises",
+        volume: "Volume (kg)",
+        workouts: "Workouts",
+        timesPerformed: "Times Performed",
+        noData: "No data available yet. Start recording workouts to see your progress!"
+      }
+    },
     history: {
       title: "Workout History",
       empty: "No workouts registered yet.",
@@ -234,6 +253,7 @@ export const translations = {
       workouts: "Treinos",
       prs: "Recordes Pessoais",
       routines: "Minha Rotina",
+      progress: "Progresso",
       history: "Histórico",
       presetRoutines: "Rotinas Prontas"
     },
@@ -402,6 +422,24 @@ export const translations = {
       delete: "Deletar",
       confirm: "Confirmar"
     },
+    progress: {
+      title: "Gráficos e Estatísticas de Progresso",
+      stats: {
+        totalWorkouts: "Total de Treinos",
+        totalVolume: "Volume Total (kg)",
+        totalPRs: "Total de PRs",
+        avgVolume: "Volume Médio/Treino"
+      },
+      charts: {
+        volumeOverTime: "Volume ao Longo do Tempo",
+        workoutsPerWeek: "Treinos por Semana",
+        topExercises: "Exercícios Mais Realizados",
+        volume: "Volume (kg)",
+        workouts: "Treinos",
+        timesPerformed: "Vezes Realizados",
+        noData: "Ainda não há dados disponíveis. Comece a registrar treinos para ver seu progresso!"
+      }
+    },
     history: {
       title: "Histórico de Treinos",
       empty: "Nenhum treino registrado ainda.",
@@ -466,6 +504,7 @@ export const translations = {
       workouts: "Treinos",
       prs: "Recordes Pessoais",
       routines: "Minha Rotina",
+      progress: "Progresso",
       history: "Histórico",
       presetRoutines: "Rotinas Prontas"
     },
@@ -633,6 +672,24 @@ export const translations = {
       seconds: "seg",
       delete: "Deletar",
       confirm: "Confirmar"
+    },
+    progress: {
+      title: "Gráficos e Estatísticas de Progresso",
+      stats: {
+        totalWorkouts: "Total de Treinos",
+        totalVolume: "Volume Total (kg)",
+        totalPRs: "Total de PRs",
+        avgVolume: "Volume Médio/Treino"
+      },
+      charts: {
+        volumeOverTime: "Volume ao Longo do Tempo",
+        workoutsPerWeek: "Treinos por Semana",
+        topExercises: "Exercícios Mais Realizados",
+        volume: "Volume (kg)",
+        workouts: "Treinos",
+        timesPerformed: "Vezes Realizados",
+        noData: "Ainda não há dados disponíveis. Comece a registar treinos para ver o seu progresso!"
+      }
     },
     history: {
       title: "Histórico de Treinos",
