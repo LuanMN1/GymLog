@@ -39,17 +39,21 @@ axios.defaults.baseURL = api.baseURL;
 let authStateSetters = null;
 
 // Axios interceptor to handle 401 errors
+let isRestoringSession = false;
+
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && authStateSetters) {
+    if (error.response?.status === 401 && authStateSetters && !isRestoringSession) {
       // Session expired, try to restore as guest
       const savedUser = localStorage.getItem('gymlog-user');
       const wasAuthenticated = localStorage.getItem('gymlog-isAuthenticated') === 'true';
+      const isAlreadyGuest = localStorage.getItem('gymlog-isGuest') === 'true';
       
-      if (wasAuthenticated && savedUser) {
+      if (wasAuthenticated && savedUser && !isAlreadyGuest) {
         // User was authenticated but session expired
         // Try to activate guest mode automatically
+        isRestoringSession = true;
         try {
           await axios.post('/api/auth/guest', {}, { withCredentials: true });
           if (authStateSetters.setIsGuest) {
@@ -60,11 +64,24 @@ axios.interceptors.response.use(
             localStorage.removeItem('gymlog-isAuthenticated');
             localStorage.removeItem('gymlog-user');
           }
+          isRestoringSession = false;
           // Retry the original request
           return axios.request(error.config);
         } catch (guestError) {
-          // Couldn't activate guest mode, show error
+          // Couldn't activate guest mode
+          isRestoringSession = false;
           console.error('Failed to restore session:', guestError);
+          // Show user-friendly error
+          if (error.config && !error.config._retry) {
+            error.config._retry = true;
+            error.message = 'Sua sessão expirou. Por favor, faça login novamente ou use o modo visitante.';
+          }
+        }
+      } else if (!isAlreadyGuest) {
+        // Not authenticated and not guest, suggest guest mode
+        if (error.config && !error.config._retry) {
+          error.config._retry = true;
+          error.message = 'Você precisa fazer login ou usar o modo visitante para continuar.';
         }
       }
     }
