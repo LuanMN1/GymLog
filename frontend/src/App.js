@@ -35,6 +35,43 @@ import {
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = api.baseURL;
 
+// Create a ref to store the setState functions (will be set in App component)
+let authStateSetters = null;
+
+// Axios interceptor to handle 401 errors
+axios.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401 && authStateSetters) {
+      // Session expired, try to restore as guest
+      const savedUser = localStorage.getItem('gymlog-user');
+      const wasAuthenticated = localStorage.getItem('gymlog-isAuthenticated') === 'true';
+      
+      if (wasAuthenticated && savedUser) {
+        // User was authenticated but session expired
+        // Try to activate guest mode automatically
+        try {
+          await axios.post('/api/auth/guest', {}, { withCredentials: true });
+          if (authStateSetters.setIsGuest) {
+            authStateSetters.setIsGuest(true);
+            authStateSetters.setIsAuthenticated(false);
+            authStateSetters.setUser(null);
+            localStorage.setItem('gymlog-isGuest', 'true');
+            localStorage.removeItem('gymlog-isAuthenticated');
+            localStorage.removeItem('gymlog-user');
+          }
+          // Retry the original request
+          return axios.request(error.config);
+        } catch (guestError) {
+          // Couldn't activate guest mode, show error
+          console.error('Failed to restore session:', guestError);
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // Import icons
 const iconDelete = require('./assets/icons/icon-delete.png');
 const iconChart = require('./assets/icons/icon-chart.png');
@@ -87,6 +124,18 @@ function App() {
   const [isGuest, setIsGuest] = useState(false);
   const [user, setUser] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Set auth state setters for axios interceptor
+  useEffect(() => {
+    authStateSetters = {
+      setIsAuthenticated,
+      setIsGuest,
+      setUser
+    };
+    return () => {
+      authStateSetters = null;
+    };
+  }, []);
   const [exercises, setExercises] = useState([]);
   const [prs, setPRs] = useState([]);
   const [routines, setRoutines] = useState([]);
