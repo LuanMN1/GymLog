@@ -9,6 +9,10 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///gymlog.db').replace('postgres://', 'postgresql://')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+# Configure session to be more persistent
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 30  # 30 days
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Configure CORS to allow requests from Vercel frontend
 frontend_url = os.environ.get('FRONTEND_URL', '')
@@ -130,6 +134,7 @@ def register():
     
     session['user_id'] = user.id
     session['is_guest'] = False
+    session.permanent = True  # Make session persistent
     
     return jsonify({
         'message': 'Registration successful',
@@ -157,6 +162,7 @@ def login():
     
     session['user_id'] = user.id
     session['is_guest'] = False
+    session.permanent = True  # Make session persistent
     
     return jsonify({
         'message': 'Login successful',
@@ -193,6 +199,7 @@ def get_current_user_info():
 def guest_login():
     session['is_guest'] = True
     session.pop('user_id', None)
+    session.permanent = True  # Make session persistent
     return jsonify({'message': 'Guest mode activated'})
 
 @app.route('/api/auth/profile', methods=['PUT'])

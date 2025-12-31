@@ -134,6 +134,7 @@ function App() {
 
   const checkAuth = async () => {
     try {
+      // First, try to get auth from backend session
       const response = await axios.get('/api/auth/me', {
         withCredentials: true
       });
@@ -141,21 +142,78 @@ function App() {
         setIsAuthenticated(true);
         setUser(response.data);
         setIsGuest(false);
+        // Update localStorage
+        localStorage.setItem('gymlog-user', JSON.stringify(response.data));
+        localStorage.setItem('gymlog-isAuthenticated', 'true');
+        localStorage.removeItem('gymlog-isGuest');
       } else if (response.data.is_guest === true) {
         setIsGuest(true);
         setIsAuthenticated(false);
         setUser(null);
+        localStorage.setItem('gymlog-isGuest', 'true');
+        localStorage.removeItem('gymlog-isAuthenticated');
+        localStorage.removeItem('gymlog-user');
       } else {
-        // Not authenticated
+        // Backend session expired, check localStorage
+        const savedUser = localStorage.getItem('gymlog-user');
+        const isAuthenticated = localStorage.getItem('gymlog-isAuthenticated');
+        const isGuest = localStorage.getItem('gymlog-isGuest');
+        
+        if (isAuthenticated === 'true' && savedUser) {
+          // Try to restore from localStorage
+          try {
+            const userData = JSON.parse(savedUser);
+            setIsAuthenticated(true);
+            setUser(userData);
+            setIsGuest(false);
+            // Session was lost, but we have user data - this is OK for now
+            // The user will need to login again if they try to do authenticated actions
+          } catch (e) {
+            // Invalid data in localStorage
+            localStorage.removeItem('gymlog-user');
+            localStorage.removeItem('gymlog-isAuthenticated');
+            setIsAuthenticated(false);
+            setIsGuest(false);
+            setUser(null);
+          }
+        } else if (isGuest === 'true') {
+          setIsGuest(true);
+          setIsAuthenticated(false);
+          setUser(null);
+        } else {
+          setIsAuthenticated(false);
+          setIsGuest(false);
+          setUser(null);
+        }
+      }
+    } catch (error) {
+      // Backend error, check localStorage as fallback
+      const savedUser = localStorage.getItem('gymlog-user');
+      const isAuthenticated = localStorage.getItem('gymlog-isAuthenticated');
+      const isGuest = localStorage.getItem('gymlog-isGuest');
+      
+      if (isAuthenticated === 'true' && savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          setIsAuthenticated(true);
+          setUser(userData);
+          setIsGuest(false);
+        } catch (e) {
+          localStorage.removeItem('gymlog-user');
+          localStorage.removeItem('gymlog-isAuthenticated');
+          setIsAuthenticated(false);
+          setIsGuest(false);
+          setUser(null);
+        }
+      } else if (isGuest === 'true') {
+        setIsGuest(true);
+        setIsAuthenticated(false);
+        setUser(null);
+      } else {
         setIsAuthenticated(false);
         setIsGuest(false);
         setUser(null);
       }
-    } catch (error) {
-      // Not authenticated
-      setIsAuthenticated(false);
-      setIsGuest(false);
-      setUser(null);
     } finally {
       setCheckingAuth(false);
     }
@@ -165,6 +223,10 @@ function App() {
     setIsAuthenticated(true);
     setUser(userData);
     setIsGuest(false);
+    // Save user info to localStorage for persistence
+    localStorage.setItem('gymlog-user', JSON.stringify(userData));
+    localStorage.setItem('gymlog-isAuthenticated', 'true');
+    localStorage.removeItem('gymlog-isGuest');
     loadData();
   };
 
@@ -176,6 +238,9 @@ function App() {
     setIsGuest(true);
     setIsAuthenticated(false);
     setUser(null);
+    localStorage.setItem('gymlog-isGuest', 'true');
+    localStorage.removeItem('gymlog-isAuthenticated');
+    localStorage.removeItem('gymlog-user');
     loadData();
   };
 
@@ -194,6 +259,10 @@ function App() {
       setPRs([]);
       setRoutines([]);
       setWorkouts([]);
+      // Clear localStorage
+      localStorage.removeItem('gymlog-user');
+      localStorage.removeItem('gymlog-isAuthenticated');
+      localStorage.removeItem('gymlog-isGuest');
     }
   };
 
