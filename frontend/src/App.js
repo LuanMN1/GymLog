@@ -199,18 +199,26 @@ function App() {
 
   const loadData = async () => {
     try {
+      console.log('Loading data from:', api.baseURL);
       const [exRes, prsRes, routinesRes, workoutsRes] = await Promise.all([
         axios.get('/api/exercises'),
         axios.get('/api/prs'),
         axios.get('/api/routines'),
         axios.get('/api/workouts')
       ]);
+      console.log('Exercises loaded:', exRes.data);
       setExercises(exRes.data);
       setPRs(prsRes.data);
       setRoutines(routinesRes.data);
       setWorkouts(workoutsRes.data);
     } catch (error) {
       console.error('Error loading data:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      // Set empty arrays on error to prevent UI issues
+      setExercises([]);
+      setPRs([]);
+      setRoutines([]);
+      setWorkouts([]);
     }
   };
 
