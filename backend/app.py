@@ -594,6 +594,7 @@ def list_routines():
 @app.route('/api/routines', methods=['POST'])
 @login_required
 def create_routine():
+    # login_required allows both authenticated users and guests
     try:
         data = request.json
         if not data:
