@@ -200,17 +200,48 @@ function App() {
   const loadData = async () => {
     try {
       console.log('Loading data from:', api.baseURL);
-      const [exRes, prsRes, routinesRes, workoutsRes] = await Promise.all([
-        axios.get('/api/exercises'),
-        axios.get('/api/prs'),
-        axios.get('/api/routines'),
-        axios.get('/api/workouts')
+      
+      // First, try to load exercises
+      let exRes;
+      try {
+        exRes = await axios.get('/api/exercises');
+        console.log('Exercises loaded:', exRes.data);
+        
+        // If no exercises, try to initialize them
+        if (!exRes.data || exRes.data.length === 0) {
+          console.log('No exercises found, initializing...');
+          try {
+            await axios.post('/api/init-exercises');
+            // Try to load again
+            exRes = await axios.get('/api/exercises');
+            console.log('Exercises after initialization:', exRes.data);
+          } catch (initError) {
+            console.error('Failed to initialize exercises:', initError);
+          }
+        }
+      } catch (exError) {
+        console.error('Error loading exercises:', exError);
+        // Try to initialize anyway
+        try {
+          await axios.post('/api/init-exercises');
+          exRes = await axios.get('/api/exercises');
+        } catch (initError) {
+          console.error('Failed to initialize exercises:', initError);
+          exRes = { data: [] };
+        }
+      }
+      
+      // Load other data
+      const [prsRes, routinesRes, workoutsRes] = await Promise.all([
+        axios.get('/api/prs').catch(() => ({ data: [] })),
+        axios.get('/api/routines').catch(() => ({ data: [] })),
+        axios.get('/api/workouts').catch(() => ({ data: [] }))
       ]);
-      console.log('Exercises loaded:', exRes.data);
-      setExercises(exRes.data);
-      setPRs(prsRes.data);
-      setRoutines(routinesRes.data);
-      setWorkouts(workoutsRes.data);
+      
+      setExercises(exRes.data || []);
+      setPRs(prsRes.data || []);
+      setRoutines(routinesRes.data || []);
+      setWorkouts(workoutsRes.data || []);
     } catch (error) {
       console.error('Error loading data:', error);
       console.error('Error details:', error.response?.data || error.message);
