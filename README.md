@@ -138,9 +138,10 @@ Language can be changed via the language switcher in the application header.
 - ✅ Edit and delete exercises and PRs
 - ✅ PR management with time-based exercise support
 - ✅ Custom confirmation modals
-- ✅ Progress charts and statistics (volume over time, workouts per week, top exercises)
-- ✅ Custom logo in header
-- ✅ Custom favicon
-- ✅ Improved volume calculation for progress charts
-- 🔄 User authentication
+- ✅ User authentication (login, registration, guest mode)
+- ✅ User profile management (username, avatar with image cropper)
+- ✅ Account deletion with confirmation
+- ✅ Confirmation popups for routine and workout actions
+- ✅ Custom icons and flag icons for language selection
+- 🔄 Progress charts and statistics
 
