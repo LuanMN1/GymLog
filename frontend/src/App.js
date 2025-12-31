@@ -592,14 +592,33 @@ function App() {
 
   const handleAddPresetRoutine = async (routineData) => {
     try {
-      await axios.post('/api/routines', routineData);
+      const response = await axios.post('/api/routines', routineData, {
+        withCredentials: true
+      });
       loadData();
       setSelectedPresetRoutine(null);
       setSuccessMessage(t('presetRoutines.addSuccess'));
       setShowSuccessModal(true);
     } catch (error) {
       console.error('Error adding preset routine:', error);
-      alert(t('presetRoutines.addError'));
+      console.error('Error response:', error.response?.data);
+      const errorMessage = error.response?.data?.error || error.message || t('presetRoutines.addError');
+      alert(errorMessage);
+      
+      // If unauthorized, might need to re-authenticate
+      if (error.response?.status === 401) {
+        // Try to restore session
+        const savedUser = localStorage.getItem('gymlog-user');
+        if (savedUser) {
+          try {
+            const userData = JSON.parse(savedUser);
+            // User data exists but session expired - show message
+            alert(t('auth.sessionExpired') || 'Sua sessão expirou. Por favor, faça login novamente.');
+          } catch (e) {
+            // Invalid data
+          }
+        }
+      }
     }
   };
 

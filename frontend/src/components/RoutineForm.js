@@ -115,15 +115,26 @@ const RoutineForm = ({ onClose, onSuccess, routine = null, exercises: availableE
     setLoading(true);
     try {
       if (routine) {
-        await axios.put(`/api/routines/${routine.id}`, formData);
+        await axios.put(`/api/routines/${routine.id}`, formData, {
+          withCredentials: true
+        });
       } else {
-        await axios.post('/api/routines', formData);
+        await axios.post('/api/routines', formData, {
+          withCredentials: true
+        });
       }
       onSuccess();
       onClose();
     } catch (err) {
-      setError(t('forms.error.createFailed'));
       console.error('Error saving routine:', err);
+      console.error('Error response:', err.response?.data);
+      const errorMessage = err.response?.data?.error || err.message || t('forms.error.createFailed');
+      setError(errorMessage);
+      
+      // If unauthorized, might need to re-authenticate
+      if (err.response?.status === 401) {
+        setError(t('auth.sessionExpired') || 'Sua sessão expirou. Por favor, faça login novamente.');
+      }
     } finally {
       setLoading(false);
     }

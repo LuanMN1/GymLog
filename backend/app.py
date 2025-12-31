@@ -594,29 +594,48 @@ def list_routines():
 @app.route('/api/routines', methods=['POST'])
 @login_required
 def create_routine():
-    data = request.json
-    user = get_current_user()
-    routine = Routine(
-        name=data['name'],
-        description=data.get('description', ''),
-        preset_id=data.get('preset_id', None),
-        user_id=user.id if user else None
-    )
-    db.session.add(routine)
-    
-    for idx, ex_data in enumerate(data.get('exercises', [])):
-        routine_exercise = RoutineExercise(
-            routine=routine,
-            exercise_id=ex_data['exercise_id'],
-            sets=ex_data.get('sets', 0),
-            reps=ex_data.get('reps', 0),
-            order=ex_data.get('order', idx),
-            notes=ex_data.get('notes', '')
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        if not data.get('name'):
+            return jsonify({'error': 'Routine name is required'}), 400
+        
+        if not data.get('exercises') or len(data.get('exercises', [])) == 0:
+            return jsonify({'error': 'At least one exercise is required'}), 400
+        
+        user = get_current_user()
+        routine = Routine(
+            name=data['name'],
+            description=data.get('description', ''),
+            preset_id=data.get('preset_id', None),
+            user_id=user.id if user else None
         )
-        db.session.add(routine_exercise)
-    
-    db.session.commit()
-    return jsonify({'id': routine.id, 'message': 'Routine created successfully'}), 201
+        db.session.add(routine)
+        db.session.flush()  # Get the routine ID
+        
+        for idx, ex_data in enumerate(data.get('exercises', [])):
+            if not ex_data.get('exercise_id'):
+                db.session.rollback()
+                return jsonify({'error': f'Exercise ID is required for exercise at position {idx + 1}'}), 400
+            
+            routine_exercise = RoutineExercise(
+                routine=routine,
+                exercise_id=ex_data['exercise_id'],
+                sets=ex_data.get('sets', 0),
+                reps=ex_data.get('reps', 0),
+                order=ex_data.get('order', idx),
+                notes=ex_data.get('notes', '')
+            )
+            db.session.add(routine_exercise)
+        
+        db.session.commit()
+        return jsonify({'id': routine.id, 'message': 'Routine created successfully'}), 201
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating routine: {str(e)}")
+        return jsonify({'error': f'Failed to create routine: {str(e)}'}), 500
 
 @app.route('/api/routines/<int:routine_id>', methods=['GET'])
 def get_routine(routine_id):
