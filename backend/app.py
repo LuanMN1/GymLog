@@ -17,11 +17,14 @@ cors_origins = ['http://localhost:3000']
 # Add Vercel URL if provided
 if frontend_url:
     cors_origins.append(frontend_url)
+    # Also allow any Vercel preview URLs
+    if 'vercel.app' in frontend_url:
+        cors_origins.append('https://*.vercel.app')
 
-# Allow all Vercel domains (for preview deployments)
+# Configure CORS - be more permissive for development
 CORS(app, 
      supports_credentials=True, 
-     origins=cors_origins,
+     origins=cors_origins if cors_origins else ['*'],
      allow_headers=['Content-Type', 'Authorization'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 db.init_app(app)
