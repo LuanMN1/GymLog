@@ -2,6 +2,12 @@
 
 A fullstack application for managing gym workouts, tracking personal records (PRs), and monitoring fitness progress.
 
+## 🌐 Live Demo
+
+**Website**: [https://gym-log-lovat.vercel.app](https://gym-log-lovat.vercel.app)
+
+The application is deployed and ready to use!
+
 ## Technologies
 
 - **Frontend**: React with i18n support (English, Portuguese BR, Portuguese PT)
