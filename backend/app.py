@@ -1,21 +1,186 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
-from models import db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise
+from functools import wraps
+from models import db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise, User
 from datetime import datetime
+import os
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gymlog.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///gymlog.db').replace('postgres://', 'postgresql://')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
-CORS(app)
+# Configure CORS to allow requests from Vercel frontend
+frontend_url = os.environ.get('FRONTEND_URL', '')
+cors_origins = ['http://localhost:3000']
+if frontend_url:
+    cors_origins.append(frontend_url)
+
+CORS(app, supports_credentials=True, origins=cors_origins)
 db.init_app(app)
 
 # Create tables
 with app.app_context():
     db.create_all()
 
+# Helper function to get current user
+def get_current_user():
+    user_id = session.get('user_id')
+    if user_id:
+        return User.query.get(user_id)
+    return None
+
+# Decorator to require login
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session and not session.get('is_guest'):
+            return jsonify({'error': 'Unauthorized'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Auth Routes
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    data = request.json
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
+    
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    
+    if User.query.filter_by(email=email).first():
+        return jsonify({'error': 'Email already registered'}), 400
+    
+    username = data.get('username', '').strip()
+    avatar = data.get('avatar', None)  # Base64 encoded image
+    
+    user = User(email=email, username=username if username else None, avatar=avatar)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    
+    session['user_id'] = user.id
+    session['is_guest'] = False
+    
+    return jsonify({
+        'message': 'Registration successful',
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'avatar': user.avatar
+        }
+    }), 201
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    data = request.json
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+    
+    if not email or not password:
+        return jsonify({'error': 'Email and password are required'}), 400
+    
+    user = User.query.filter_by(email=email).first()
+    
+    if not user or not user.check_password(password):
+        return jsonify({'error': 'Invalid email or password'}), 401
+    
+    session['user_id'] = user.id
+    session['is_guest'] = False
+    
+    return jsonify({
+        'message': 'Login successful',
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'avatar': user.avatar
+        }
+    })
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    session.pop('user_id', None)
+    session.pop('is_guest', None)
+    return jsonify({'message': 'Logout successful'})
+
+@app.route('/api/auth/me', methods=['GET'])
+def get_current_user_info():
+    user = get_current_user()
+    is_guest = session.get('is_guest', False)
+    if user:
+        return jsonify({
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'avatar': user.avatar,
+            'is_guest': is_guest,
+            'created_at': user.created_at.isoformat()
+        })
+    return jsonify({'is_guest': is_guest})
+
+@app.route('/api/auth/guest', methods=['POST'])
+def guest_login():
+    session['is_guest'] = True
+    session.pop('user_id', None)
+    return jsonify({'message': 'Guest mode activated'})
+
+@app.route('/api/auth/profile', methods=['PUT'])
+@login_required
+def update_profile():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    data = request.json
+    if 'username' in data:
+        user.username = data['username'].strip() if data['username'] else None
+    if 'avatar' in data:
+        user.avatar = data['avatar']  # Base64 encoded image
+    
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Profile updated successfully',
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'avatar': user.avatar
+        }
+    })
+
+@app.route('/api/auth/account', methods=['DELETE'])
+@login_required
+def delete_account():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    # Delete all user data (cascade will handle related records)
+    # First, delete workouts, PRs, and routines
+    Workout.query.filter_by(user_id=user.id).delete()
+    PR.query.filter_by(user_id=user.id).delete()
+    Routine.query.filter_by(user_id=user.id).delete()
+    
+    # Then delete the user
+    db.session.delete(user)
+    db.session.commit()
+    
+    # Clear session
+    session.pop('user_id', None)
+    session.pop('is_guest', None)
+    
+    return jsonify({'message': 'Account deleted successfully'})
+
 # Exercise Routes
 @app.route('/api/exercises', methods=['GET'])
+@login_required
 def list_exercises():
     exercises = Exercise.query.all()
     return jsonify([{
@@ -39,8 +204,15 @@ def create_exercise():
 
 # Workout Routes
 @app.route('/api/workouts', methods=['GET'])
+@login_required
 def list_workouts():
-    workouts = Workout.query.order_by(Workout.date.desc()).all()
+    user = get_current_user()
+    if session.get('is_guest'):
+        workouts = Workout.query.filter_by(user_id=None).order_by(Workout.date.desc()).all()
+    elif user:
+        workouts = Workout.query.filter_by(user_id=user.id).order_by(Workout.date.desc()).all()
+    else:
+        return jsonify({'error': 'Unauthorized'}), 401
     return jsonify([{
         'id': w.id,
         'name': w.name,
@@ -64,12 +236,15 @@ def list_workouts():
     } for w in workouts])
 
 @app.route('/api/workouts', methods=['POST'])
+@login_required
 def create_workout():
     data = request.json
+    user = get_current_user()
     workout = Workout(
         name=data['name'],
         date=datetime.fromisoformat(data['date']),
-        preset_id=data.get('preset_id')
+        preset_id=data.get('preset_id'),
+        user_id=user.id if user else None
     )
     db.session.add(workout)
     
@@ -110,8 +285,15 @@ def delete_workout(workout_id):
 
 # PR Routes
 @app.route('/api/prs', methods=['GET'])
+@login_required
 def list_prs():
-    prs = PR.query.order_by(PR.date.desc()).all()
+    user = get_current_user()
+    if session.get('is_guest'):
+        prs = PR.query.filter_by(user_id=None).order_by(PR.date.desc()).all()
+    elif user:
+        prs = PR.query.filter_by(user_id=user.id).order_by(PR.date.desc()).all()
+    else:
+        return jsonify({'error': 'Unauthorized'}), 401
     return jsonify([{
         'id': p.id,
         'exercise_id': p.exercise_id,
@@ -124,15 +306,18 @@ def list_prs():
     } for p in prs])
 
 @app.route('/api/prs', methods=['POST'])
+@login_required
 def create_pr():
     data = request.json
+    user = get_current_user()
     pr = PR(
         exercise_id=data['exercise_id'],
         weight=data.get('weight', 0),
         reps=data.get('reps', 1),
         duration=data.get('duration', 0),
         date=datetime.fromisoformat(data.get('date', datetime.now().isoformat())),
-        notes=data.get('notes', '')
+        notes=data.get('notes', ''),
+        user_id=user.id if user else None
     )
     db.session.add(pr)
     db.session.commit()
@@ -188,8 +373,15 @@ def prs_by_exercise(exercise_id):
 
 # Routine Routes
 @app.route('/api/routines', methods=['GET'])
+@login_required
 def list_routines():
-    routines = Routine.query.order_by(Routine.created_at.desc()).all()
+    user = get_current_user()
+    if session.get('is_guest'):
+        routines = Routine.query.filter_by(user_id=None).order_by(Routine.created_at.desc()).all()
+    elif user:
+        routines = Routine.query.filter_by(user_id=user.id).order_by(Routine.created_at.desc()).all()
+    else:
+        return jsonify({'error': 'Unauthorized'}), 401
     return jsonify([{
         'id': r.id,
         'name': r.name,
@@ -207,12 +399,15 @@ def list_routines():
     } for r in routines])
 
 @app.route('/api/routines', methods=['POST'])
+@login_required
 def create_routine():
     data = request.json
+    user = get_current_user()
     routine = Routine(
         name=data['name'],
         description=data.get('description', ''),
-        preset_id=data.get('preset_id', None)
+        preset_id=data.get('preset_id', None),
+        user_id=user.id if user else None
     )
     db.session.add(routine)
     

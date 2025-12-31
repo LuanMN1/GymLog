@@ -1,6 +1,7 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import './App.css';
 import axios from 'axios';
+import { api } from './config';
 import { translations } from './i18n/translations';
 import { getTranslatedExerciseName } from './i18n/exerciseTranslations';
 import { isTimeBasedExercise } from './utils/exerciseTypes';
@@ -30,8 +31,9 @@ import {
   ResponsiveContainer
 } from 'recharts';
 
-// Configure axios to use credentials
+// Configure axios to use credentials and base URL
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = api.baseURL;
 
 // Import icons
 const iconDelete = require('./assets/icons/icon-delete.png');
