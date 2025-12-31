@@ -9,7 +9,6 @@ export const translations = {
       workouts: "Workouts",
       prs: "Personal Records",
       routines: "My Workout",
-      progress: "Progress",
       history: "History",
       presetRoutines: "Preset Routines"
     },
@@ -152,6 +151,10 @@ export const translations = {
       edit: "Edit",
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this routine?",
+      confirmDeleteTitle: "Delete Routine",
+      confirmDeleteMessage: "Are you sure you want to delete this routine? This action cannot be undone.",
+      deleteConfirm: "Yes, Delete",
+      deleteSuccess: "Routine deleted successfully!",
       deleteError: "Failed to delete routine",
       exercises: "Exercises",
       showExercises: "Show Exercises",
@@ -170,7 +173,11 @@ export const translations = {
       previous: "Previous",
       next: "Next",
       finishWorkout: "Finish Workout",
-      saveError: "Failed to save workout. Please try again."
+      saveError: "Failed to save workout. Please try again.",
+      confirmDeleteTitle: "Delete Routine",
+      confirmDeleteMessage: "Are you sure you want to delete this routine? This action cannot be undone.",
+      deleteConfirm: "Yes, Delete",
+      deleteSuccess: "Routine deleted successfully!"
     },
     common: {
       sets: "sets",
@@ -178,25 +185,9 @@ export const translations = {
       weight: "kg",
       seconds: "sec",
       delete: "Delete",
-      confirm: "Confirm"
-    },
-    progress: {
-      title: "Progress Charts and Statistics",
-      stats: {
-        totalWorkouts: "Total Workouts",
-        totalVolume: "Total Volume (kg)",
-        totalPRs: "Total PRs",
-        avgVolume: "Avg Volume/Workout"
-      },
-      charts: {
-        volumeOverTime: "Volume Over Time",
-        workoutsPerWeek: "Workouts Per Week",
-        topExercises: "Top Exercises",
-        volume: "Volume (kg)",
-        workouts: "Workouts",
-        timesPerformed: "Times Performed",
-        noData: "No data available yet. Start recording workouts to see your progress!"
-      }
+      confirm: "Confirm",
+      success: "Success",
+      ok: "OK"
     },
     history: {
       title: "Workout History",
@@ -206,8 +197,11 @@ export const translations = {
       date: "Date",
       delete: "Delete",
       confirmDelete: "Are you sure you want to delete this workout?",
+      confirmDeleteTitle: "Delete Workout",
+      confirmDeleteMessage: "Are you sure you want to delete this workout? This action cannot be undone.",
+      deleteConfirm: "Yes, Delete",
       deleteError: "Error deleting workout",
-      deleteSuccess: "Workout deleted successfully",
+      deleteSuccess: "Workout deleted successfully!",
       stats: {
         total: "Total Workouts",
         thisWeek: "This Week",
@@ -239,8 +233,57 @@ export const translations = {
       viewDetails: "View Details",
       noExercisesFound: "No exercises found. Please create exercises first.",
       exerciseNotAvailable: "This exercise is not available in your exercise list.",
-      addSuccess: "Routine added successfully!",
+      addSuccess: "Routine added to My Workout successfully!",
       addError: "Error adding routine."
+    },
+    auth: {
+      subtitle: "Track your workouts and progress",
+      login: "Login",
+      register: "Register",
+      email: "Email",
+      emailPlaceholder: "Enter your email",
+      password: "Password",
+      passwordPlaceholder: "Enter your password",
+      confirmPassword: "Confirm Password",
+      confirmPasswordPlaceholder: "Confirm your password",
+      username: "Username",
+      usernamePlaceholder: "Enter your username (optional)",
+      profilePicture: "Profile Picture",
+      uploadPhoto: "Upload Photo",
+      changePhoto: "Change Photo",
+      passwordsDoNotMatch: "Passwords do not match",
+      error: "An error occurred. Please try again.",
+      loading: "Loading...",
+      or: "OR",
+      guestMode: "Try as Guest",
+      guestDescription: "Explore the app without creating an account. Perfect for recruiters and portfolio reviewers.",
+      logout: "Logout"
+    },
+    userMenu: {
+      settings: "Settings"
+    },
+    userSettings: {
+      title: "User Settings",
+      account: "Account",
+      security: "Security",
+      preferences: "Preferences",
+      accountInfo: "Account Information",
+      email: "Email",
+      memberSince: "Member Since",
+      changePassword: "Change Password",
+      passwordNote: "Password change functionality will be available in a future update.",
+      currentPassword: "Current Password",
+      newPassword: "New Password",
+      confirmNewPassword: "Confirm New Password",
+      updatePassword: "Update Password",
+      preferencesNote: "Language preferences can be changed using the language switcher in the header.",
+      language: "Language",
+      languageNote: "Use the language switcher in the header to change language.",
+      saveChanges: "Save Changes",
+      deleteAccount: "Delete Account",
+      deleteAccountTitle: "Delete Account",
+      deleteAccountMessage: "Are you sure you want to delete your account? This action cannot be undone. All your data (workouts, PRs, routines) will be permanently deleted.",
+      deleteAccountConfirm: "Yes, Delete Account"
     }
   },
   'pt-BR': {
@@ -253,7 +296,6 @@ export const translations = {
       workouts: "Treinos",
       prs: "Recordes Pessoais",
       routines: "Minha Rotina",
-      progress: "Progresso",
       history: "Histórico",
       presetRoutines: "Rotinas Prontas"
     },
@@ -394,6 +436,10 @@ export const translations = {
       edit: "Editar",
       delete: "Excluir",
       confirmDelete: "Tem certeza que deseja excluir esta rotina?",
+      confirmDeleteTitle: "Excluir Rotina",
+      confirmDeleteMessage: "Tem certeza que deseja excluir esta rotina? Esta ação não pode ser desfeita.",
+      deleteConfirm: "Sim, Excluir",
+      deleteSuccess: "Rotina excluída com sucesso!",
       deleteError: "Falha ao excluir rotina",
       exercises: "Exercícios",
       showExercises: "Mostrar Exercícios",
@@ -422,24 +468,6 @@ export const translations = {
       delete: "Deletar",
       confirm: "Confirmar"
     },
-    progress: {
-      title: "Gráficos e Estatísticas de Progresso",
-      stats: {
-        totalWorkouts: "Total de Treinos",
-        totalVolume: "Volume Total (kg)",
-        totalPRs: "Total de PRs",
-        avgVolume: "Volume Médio/Treino"
-      },
-      charts: {
-        volumeOverTime: "Volume ao Longo do Tempo",
-        workoutsPerWeek: "Treinos por Semana",
-        topExercises: "Exercícios Mais Realizados",
-        volume: "Volume (kg)",
-        workouts: "Treinos",
-        timesPerformed: "Vezes Realizados",
-        noData: "Ainda não há dados disponíveis. Comece a registrar treinos para ver seu progresso!"
-      }
-    },
     history: {
       title: "Histórico de Treinos",
       empty: "Nenhum treino registrado ainda.",
@@ -448,8 +476,11 @@ export const translations = {
       date: "Data",
       delete: "Excluir",
       confirmDelete: "Tem certeza que deseja excluir este treino?",
+      confirmDeleteTitle: "Excluir Treino",
+      confirmDeleteMessage: "Tem certeza que deseja excluir este treino? Esta ação não pode ser desfeita.",
+      deleteConfirm: "Sim, Excluir",
       deleteError: "Erro ao excluir treino",
-      deleteSuccess: "Treino excluído com sucesso",
+      deleteSuccess: "Treino excluído com sucesso!",
       stats: {
         total: "Total de Treinos",
         thisWeek: "Esta Semana",
@@ -481,7 +512,7 @@ export const translations = {
       viewDetails: "Ver Detalhes",
       noExercisesFound: "Nenhum exercício encontrado. Por favor, crie exercícios primeiro.",
       exerciseNotAvailable: "Este exercício não está disponível na sua lista de exercícios.",
-      addSuccess: "Rotina adicionada com sucesso!",
+      addSuccess: "Rotina adicionada à Minha Rotina com sucesso!",
       addError: "Erro ao adicionar rotina."
     },
     exerciseDetail: {
@@ -492,6 +523,55 @@ export const translations = {
       howTo: "Como Realizar",
       imageUnavailable: "Imagem do tutorial não disponível",
       close: "Fechar"
+    },
+    auth: {
+      subtitle: "Acompanhe seus treinos e progresso",
+      login: "Entrar",
+      register: "Registrar",
+      email: "Email",
+      emailPlaceholder: "Digite seu email",
+      password: "Senha",
+      passwordPlaceholder: "Digite sua senha",
+      confirmPassword: "Confirmar Senha",
+      confirmPasswordPlaceholder: "Confirme sua senha",
+      username: "Nome de Usuário",
+      usernamePlaceholder: "Digite seu nome de usuário (opcional)",
+      profilePicture: "Foto de Perfil",
+      uploadPhoto: "Enviar Foto",
+      changePhoto: "Alterar Foto",
+      passwordsDoNotMatch: "As senhas não coincidem",
+      error: "Ocorreu um erro. Tente novamente.",
+      loading: "Carregando...",
+      or: "OU",
+      guestMode: "Experimentar como Convidado",
+      guestDescription: "Explore o aplicativo sem criar uma conta. Perfeito para recrutadores e revisores de portfólio.",
+      logout: "Sair"
+    },
+    userMenu: {
+      settings: "Configurações"
+    },
+    userSettings: {
+      title: "Configurações do Usuário",
+      account: "Conta",
+      security: "Segurança",
+      preferences: "Preferências",
+      accountInfo: "Informações da Conta",
+      email: "Email",
+      memberSince: "Membro desde",
+      changePassword: "Alterar Senha",
+      passwordNote: "A funcionalidade de alteração de senha estará disponível em uma atualização futura.",
+      currentPassword: "Senha Atual",
+      newPassword: "Nova Senha",
+      confirmNewPassword: "Confirmar Nova Senha",
+      updatePassword: "Atualizar Senha",
+      preferencesNote: "As preferências de idioma podem ser alteradas usando o seletor de idioma no cabeçalho.",
+      language: "Idioma",
+      languageNote: "Use o seletor de idioma no cabeçalho para alterar o idioma.",
+      saveChanges: "Salvar Alterações",
+      deleteAccount: "Excluir Conta",
+      deleteAccountTitle: "Excluir Conta",
+      deleteAccountMessage: "Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita. Todos os seus dados (treinos, PRs, rotinas) serão permanentemente excluídos.",
+      deleteAccountConfirm: "Sim, Excluir Conta"
     }
   },
   'pt-PT': {
@@ -504,7 +584,6 @@ export const translations = {
       workouts: "Treinos",
       prs: "Recordes Pessoais",
       routines: "Minha Rotina",
-      progress: "Progresso",
       history: "Histórico",
       presetRoutines: "Rotinas Prontas"
     },
@@ -645,6 +724,10 @@ export const translations = {
       edit: "Editar",
       delete: "Eliminar",
       confirmDelete: "Tem a certeza que deseja eliminar esta rotina?",
+      confirmDeleteTitle: "Eliminar Rotina",
+      confirmDeleteMessage: "Tem a certeza que deseja eliminar esta rotina? Esta ação não pode ser desfeita.",
+      deleteConfirm: "Sim, Eliminar",
+      deleteSuccess: "Rotina eliminada com sucesso!",
       deleteError: "Falha ao eliminar rotina",
       exercises: "Exercícios",
       showExercises: "Mostrar Exercícios",
@@ -671,25 +754,9 @@ export const translations = {
       weight: "kg",
       seconds: "seg",
       delete: "Deletar",
-      confirm: "Confirmar"
-    },
-    progress: {
-      title: "Gráficos e Estatísticas de Progresso",
-      stats: {
-        totalWorkouts: "Total de Treinos",
-        totalVolume: "Volume Total (kg)",
-        totalPRs: "Total de PRs",
-        avgVolume: "Volume Médio/Treino"
-      },
-      charts: {
-        volumeOverTime: "Volume ao Longo do Tempo",
-        workoutsPerWeek: "Treinos por Semana",
-        topExercises: "Exercícios Mais Realizados",
-        volume: "Volume (kg)",
-        workouts: "Treinos",
-        timesPerformed: "Vezes Realizados",
-        noData: "Ainda não há dados disponíveis. Comece a registar treinos para ver o seu progresso!"
-      }
+      confirm: "Confirmar",
+      success: "Sucesso",
+      ok: "OK"
     },
     history: {
       title: "Histórico de Treinos",
@@ -699,8 +766,11 @@ export const translations = {
       date: "Data",
       delete: "Eliminar",
       confirmDelete: "Tem a certeza que deseja eliminar este treino?",
+      confirmDeleteTitle: "Eliminar Treino",
+      confirmDeleteMessage: "Tem a certeza que deseja eliminar este treino? Esta ação não pode ser desfeita.",
+      deleteConfirm: "Sim, Eliminar",
       deleteError: "Erro ao eliminar treino",
-      deleteSuccess: "Treino eliminado com sucesso",
+      deleteSuccess: "Treino eliminado com sucesso!",
       stats: {
         total: "Total de Treinos",
         thisWeek: "Esta Semana",
@@ -732,7 +802,7 @@ export const translations = {
       viewDetails: "Ver Detalhes",
       noExercisesFound: "Nenhum exercício encontrado. Por favor, crie exercícios primeiro.",
       exerciseNotAvailable: "Este exercício não está disponível na sua lista de exercícios.",
-      addSuccess: "Rotina adicionada com sucesso!",
+      addSuccess: "Rotina adicionada à Minha Rotina com sucesso!",
       addError: "Erro ao adicionar rotina."
     },
     exerciseDetail: {
@@ -743,6 +813,55 @@ export const translations = {
       howTo: "Como Realizar",
       imageUnavailable: "Imagem do tutorial não disponível",
       close: "Fechar"
+    },
+    auth: {
+      subtitle: "Acompanhe os seus treinos e progresso",
+      login: "Iniciar Sessão",
+      register: "Registar",
+      email: "Email",
+      emailPlaceholder: "Digite o seu email",
+      password: "Palavra-passe",
+      passwordPlaceholder: "Digite a sua palavra-passe",
+      confirmPassword: "Confirmar Palavra-passe",
+      confirmPasswordPlaceholder: "Confirme a sua palavra-passe",
+      username: "Nome de Utilizador",
+      usernamePlaceholder: "Digite o seu nome de utilizador (opcional)",
+      profilePicture: "Foto de Perfil",
+      uploadPhoto: "Carregar Foto",
+      changePhoto: "Alterar Foto",
+      passwordsDoNotMatch: "As palavras-passe não coincidem",
+      error: "Ocorreu um erro. Tente novamente.",
+      loading: "A carregar...",
+      or: "OU",
+      guestMode: "Experimentar como Convidado",
+      guestDescription: "Explore a aplicação sem criar uma conta. Perfeito para recrutadores e revisores de portfólio.",
+      logout: "Terminar Sessão"
+    },
+    userMenu: {
+      settings: "Definições"
+    },
+    userSettings: {
+      title: "Definições do Utilizador",
+      account: "Conta",
+      security: "Segurança",
+      preferences: "Preferências",
+      accountInfo: "Informações da Conta",
+      email: "Email",
+      memberSince: "Membro desde",
+      changePassword: "Alterar Palavra-passe",
+      passwordNote: "A funcionalidade de alteração de palavra-passe estará disponível numa atualização futura.",
+      currentPassword: "Palavra-passe Atual",
+      newPassword: "Nova Palavra-passe",
+      confirmNewPassword: "Confirmar Nova Palavra-passe",
+      updatePassword: "Atualizar Palavra-passe",
+      preferencesNote: "As preferências de idioma podem ser alteradas usando o seletor de idioma no cabeçalho.",
+      language: "Idioma",
+      languageNote: "Use o seletor de idioma no cabeçalho para alterar o idioma.",
+      saveChanges: "Guardar Alterações",
+      deleteAccount: "Eliminar Conta",
+      deleteAccountTitle: "Eliminar Conta",
+      deleteAccountMessage: "Tem a certeza que deseja eliminar a sua conta? Esta ação não pode ser desfeita. Todos os seus dados (treinos, PRs, rotinas) serão permanentemente eliminados.",
+      deleteAccountConfirm: "Sim, Eliminar Conta"
     }
   }
 };

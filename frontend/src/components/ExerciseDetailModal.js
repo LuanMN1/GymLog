@@ -2,7 +2,6 @@ import React from 'react';
 import { useLanguage } from '../App';
 import { getTranslatedExerciseName } from '../i18n/exerciseTranslations';
 import { exerciseData } from '../i18n/exerciseData';
-import { getTranslatedMuscleGroups, getTranslatedInstructions } from '../i18n/exerciseDataTranslations';
 import './ExerciseDetailModal.css';
 
 const ExerciseDetailModal = ({ exercise, onClose }) => {
@@ -13,8 +12,7 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
   const exerciseInfo = exerciseData[exercise.name] || {};
   // Try to get image, with fallback
   const tutorialImage = exerciseInfo?.tutorialImage || exerciseInfo?.image || null;
-  const muscleGroups = getTranslatedMuscleGroups(exerciseInfo?.muscleGroups || [], language);
-  const instructions = getTranslatedInstructions(exercise.name, language);
+  const muscleGroups = exerciseInfo?.muscleGroups || [];
   
   // Log for debugging
   if (tutorialImage) {
@@ -89,15 +87,15 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
                   }}
                 />
                 <div className="tutorial-placeholder" style={{ display: 'none' }}>
-                  <div className="placeholder-icon">🏋️</div>
+                  <img src={require('../assets/icons/icon-workout.png')} alt="Workout" className="placeholder-icon" />
                   <p>{t('exerciseDetail.imageUnavailable')}</p>
                 </div>
               </div>
-              {instructions && instructions.length > 0 && (
+              {exerciseInfo.instructions && (
                 <div className="instructions">
                   <h4>{t('exerciseDetail.howTo')}</h4>
                   <ol>
-                    {instructions.map((instruction, idx) => (
+                    {exerciseInfo.instructions.map((instruction, idx) => (
                       <li key={idx}>{instruction}</li>
                     ))}
                   </ol>
@@ -110,19 +108,9 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
             <div className="exercise-tutorial-section">
               <h3>{t('exerciseDetail.tutorial')}</h3>
               <div className="tutorial-placeholder">
-                <div className="placeholder-icon">🏋️</div>
+                <img src={require('../assets/icons/icon-workout.png')} alt="Workout" className="placeholder-icon" />
                 <p>{t('exerciseDetail.imageUnavailable')}</p>
               </div>
-              {instructions && instructions.length > 0 && (
-                <div className="instructions">
-                  <h4>{t('exerciseDetail.howTo')}</h4>
-                  <ol>
-                    {instructions.map((instruction, idx) => (
-                      <li key={idx}>{instruction}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
             </div>
           )}
         </div>

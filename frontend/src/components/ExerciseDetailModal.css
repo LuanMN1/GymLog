@@ -157,8 +157,12 @@
 }
 
 .placeholder-icon {
-  font-size: 4rem;
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
   margin-bottom: 1rem;
+  opacity: 0.3;
+  filter: brightness(0) invert(1);
 }
 
 .instructions {

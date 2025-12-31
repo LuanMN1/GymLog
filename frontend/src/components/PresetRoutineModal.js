@@ -111,7 +111,7 @@ const PresetRoutineModal = ({ routine, onClose, onAdd, exercises }) => {
             {t('forms.cancel')}
           </button>
           <button className="btn-primary" onClick={handleAdd}>
-            ➕ {t('presetRoutines.addToMyRoutines')}
+            <img src={require('../assets/icons/icon-add.png')} alt="Add" className="btn-icon" /> {t('presetRoutines.addToMyRoutines')}
           </button>
         </div>
       </div>

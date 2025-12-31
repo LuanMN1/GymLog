@@ -4,7 +4,6 @@ import axios from 'axios';
 import { translations } from './i18n/translations';
 import { getTranslatedExerciseName } from './i18n/exerciseTranslations';
 import { isTimeBasedExercise } from './utils/exerciseTypes';
-import ExerciseForm from './components/ExerciseForm';
 import PRForm from './components/PRForm';
 import RoutineForm from './components/RoutineForm';
 import ExerciseDetailModal from './components/ExerciseDetailModal';
@@ -13,6 +12,10 @@ import ExecuteRoutineModal from './components/ExecuteRoutineModal';
 import PresetRoutineModal from './components/PresetRoutineModal';
 import WorkoutSetsModal from './components/WorkoutSetsModal';
 import ConfirmModal from './components/ConfirmModal';
+import LoginScreen from './components/LoginScreen';
+import UserMenu from './components/UserMenu';
+import UserSettings from './components/UserSettings';
+import LanguageSelector from './components/LanguageSelector';
 import { presetRoutines } from './data/presetRoutines';
 import {
   LineChart,
@@ -26,6 +29,19 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+
+// Configure axios to use credentials
+axios.defaults.withCredentials = true;
+
+// Import icons
+const iconDelete = require('./assets/icons/icon-delete.png');
+const iconChart = require('./assets/icons/icon-chart.png');
+const iconCalendarDay = require('./assets/icons/icon-calendar-day.png');
+const iconCalendarMonth = require('./assets/icons/icon-calendar-month.png');
+const iconMuscle = require('./assets/icons/icon-muscle.png');
+const iconChartLine = require('./assets/icons/icon-chart-line.png');
+const iconWorkout = require('./assets/icons/icon-workout.png');
+const iconAdd = require('./assets/icons/icon-add.png');
 
 const LanguageContext = createContext();
 
@@ -65,12 +81,15 @@ const LanguageProvider = ({ children }) => {
 
 function App() {
   const { t, language, changeLanguage } = useLanguage();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [user, setUser] = useState(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [exercises, setExercises] = useState([]);
   const [prs, setPRs] = useState([]);
   const [routines, setRoutines] = useState([]);
   const [workouts, setWorkouts] = useState([]);
   const [activeTab, setActiveTab] = useState('exercises');
-  const [showExerciseForm, setShowExerciseForm] = useState(false);
   const [showPRForm, setShowPRForm] = useState(false);
   const [editingPR, setEditingPR] = useState(null);
   const [showRoutineForm, setShowRoutineForm] = useState(false);
@@ -86,15 +105,95 @@ function App() {
   const [exerciseFilter, setExerciseFilter] = useState('all');
   const [historyFilter, setHistoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
+  const [routineToDelete, setRoutineToDelete] = useState(null);
+  const [showDeleteWorkoutConfirmModal, setShowDeleteWorkoutConfirmModal] = useState(false);
+  const [workoutToDelete, setWorkoutToDelete] = useState(null);
   const [showConfirmDeletePR, setShowConfirmDeletePR] = useState(false);
   const [prToDelete, setPrToDelete] = useState(null);
   const [historyPage, setHistoryPage] = useState(1);
+  const [showUserSettings, setShowUserSettings] = useState(false);
   const itemsPerPage = 6; // 2 linhas x 3 colunas (3 em cima, 3 embaixo)
   const historyItemsPerPage = 3; // Máximo 3 treinos por página no histórico
 
+  // Check authentication status on mount
   useEffect(() => {
-    loadData();
+    checkAuth();
   }, []);
+
+  // Load data when authenticated
+  useEffect(() => {
+    if (isAuthenticated || isGuest) {
+      loadData();
+    }
+  }, [isAuthenticated, isGuest]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await axios.get('/api/auth/me', {
+        withCredentials: true
+      });
+      if (response.data.id) {
+        setIsAuthenticated(true);
+        setUser(response.data);
+        setIsGuest(false);
+      } else if (response.data.is_guest === true) {
+        setIsGuest(true);
+        setIsAuthenticated(false);
+        setUser(null);
+      } else {
+        // Not authenticated
+        setIsAuthenticated(false);
+        setIsGuest(false);
+        setUser(null);
+      }
+    } catch (error) {
+      // Not authenticated
+      setIsAuthenticated(false);
+      setIsGuest(false);
+      setUser(null);
+    } finally {
+      setCheckingAuth(false);
+    }
+  };
+
+  const handleLogin = (userData) => {
+    setIsAuthenticated(true);
+    setUser(userData);
+    setIsGuest(false);
+    loadData();
+  };
+
+  const handleUserUpdate = (updatedUser) => {
+    setUser(updatedUser);
+  };
+
+  const handleGuestMode = () => {
+    setIsGuest(true);
+    setIsAuthenticated(false);
+    setUser(null);
+    loadData();
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout', {}, {
+        withCredentials: true
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      setIsAuthenticated(false);
+      setIsGuest(false);
+      setUser(null);
+      setExercises([]);
+      setPRs([]);
+      setRoutines([]);
+      setWorkouts([]);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -364,205 +463,20 @@ function App() {
     };
   };
 
-  // Funções para preparar dados de progresso
-  const getWorkoutVolumeData = () => {
-    if (!workouts || workouts.length === 0) return [];
-    
-    const sortedWorkouts = [...workouts].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const volumeByDate = {};
-    
-    sortedWorkouts.forEach(workout => {
-      if (!workout.date || !workout.exercises) return;
-      
-      // Normalizar data para agrupar por dia (sem hora)
-      const workoutDate = new Date(workout.date);
-      workoutDate.setHours(0, 0, 0, 0);
-      const dateKey = workoutDate.getTime();
-      const dateLabel = workoutDate.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), { month: 'short', day: 'numeric' });
-      
-      let totalVolume = 0;
-      
-      workout.exercises.forEach(ex => {
-        if (!ex) return;
-        
-        const isTimeBased = isTimeBasedExercise(ex.name);
-        
-        // Se tiver workout_sets, usar eles (dados mais precisos)
-        if (ex.workout_sets && ex.workout_sets.length > 0) {
-          ex.workout_sets.forEach(set => {
-            if (set && !isTimeBased && set.weight && set.reps && set.weight > 0 && set.reps > 0) {
-              totalVolume += parseFloat(set.weight) * parseInt(set.reps);
-            }
-          });
-        } else {
-          // Fallback: usar dados do WorkoutExercise (para treinos antigos ou sem séries individuais)
-          if (!isTimeBased && ex.weight && ex.reps && ex.sets) {
-            const weight = parseFloat(ex.weight) || 0;
-            const reps = parseInt(ex.reps) || 0;
-            const sets = parseInt(ex.sets) || 0;
-            if (weight > 0 && reps > 0 && sets > 0) {
-              totalVolume += weight * reps * sets;
-            }
-          }
-        }
-      });
-      
-      if (totalVolume > 0) {
-        if (volumeByDate[dateKey]) {
-          volumeByDate[dateKey].volume += totalVolume;
-        } else {
-          volumeByDate[dateKey] = { date: dateLabel, volume: totalVolume, timestamp: dateKey };
-        }
-      }
-    });
-    
-    return Object.values(volumeByDate)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .map(({ date, volume }) => ({
-        date,
-        volume: Math.round(volume)
-      }));
-  };
-
-  const getPRProgressData = () => {
-    const sortedPRs = [...prs].sort((a, b) => new Date(a.date) - new Date(b.date));
-    const prByExercise = {};
-    
-    sortedPRs.forEach(pr => {
-      const exerciseName = getTranslatedExerciseName(pr.exercise_name, language);
-      if (!prByExercise[exerciseName]) {
-        prByExercise[exerciseName] = [];
-      }
-      
-      const exercise = exercises.find(ex => ex.id === pr.exercise_id);
-      const isTimeBased = exercise ? isTimeBasedExercise(exercise.name) : false;
-      
-      prByExercise[exerciseName].push({
-        date: new Date(pr.date).toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), { month: 'short', day: 'numeric' }),
-        value: isTimeBased && pr.duration ? pr.duration : pr.weight,
-        reps: pr.reps,
-        isTimeBased
-      });
-    });
-    
-    return prByExercise;
-  };
-
-  const getWorkoutsPerWeekData = () => {
-    const workoutsByWeek = {};
-    
-    workouts.forEach(workout => {
-      const date = new Date(workout.date);
-      const weekStart = new Date(date);
-      weekStart.setDate(date.getDate() - date.getDay());
-      weekStart.setHours(0, 0, 0, 0);
-      const weekKey = weekStart.getTime(); // Usar timestamp para ordenação
-      const weekLabel = weekStart.toLocaleDateString(language === 'en' ? 'en-US' : (language === 'pt-BR' ? 'pt-BR' : 'pt-PT'), { month: 'short', day: 'numeric' });
-      
-      if (workoutsByWeek[weekKey]) {
-        workoutsByWeek[weekKey].count++;
-      } else {
-        workoutsByWeek[weekKey] = { week: weekLabel, count: 1, timestamp: weekKey };
-      }
-    });
-    
-    return Object.values(workoutsByWeek)
-      .sort((a, b) => a.timestamp - b.timestamp)
-      .slice(-12) // Últimas 12 semanas
-      .map(({ week, count }) => ({ week, count }));
-  };
-
-  const getTopExercisesData = () => {
-    const exerciseCounts = {};
-    
-    workouts.forEach(workout => {
-      workout.exercises.forEach(ex => {
-        const exerciseName = getTranslatedExerciseName(ex.name, language);
-        if (exerciseCounts[exerciseName]) {
-          exerciseCounts[exerciseName]++;
-        } else {
-          exerciseCounts[exerciseName] = 1;
-        }
-      });
-    });
-    
-    return Object.entries(exerciseCounts)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10); // Top 10 exercícios
-  };
-
-  const getProgressStats = () => {
-    const now = new Date();
-    const weekAgo = new Date(now);
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const monthAgo = new Date(now);
-    monthAgo.setDate(monthAgo.getDate() - 30);
-    
-    const recentWorkouts = workouts.filter(w => w && w.date && new Date(w.date) >= monthAgo);
-    let totalVolume = 0;
-    let totalSets = 0;
-    
-    recentWorkouts.forEach(workout => {
-      if (!workout.exercises) return;
-      
-      workout.exercises.forEach(ex => {
-        if (!ex) return;
-        
-        const isTimeBased = isTimeBasedExercise(ex.name);
-        
-        // Se tiver workout_sets, usar eles (dados mais precisos)
-        if (ex.workout_sets && ex.workout_sets.length > 0) {
-          ex.workout_sets.forEach(set => {
-            if (set && !isTimeBased && set.weight && set.reps) {
-              const weight = parseFloat(set.weight) || 0;
-              const reps = parseInt(set.reps) || 0;
-              if (weight > 0 && reps > 0) {
-                totalVolume += weight * reps;
-                totalSets++;
-              }
-            }
-          });
-        } else {
-          // Fallback: usar dados do WorkoutExercise (para treinos antigos ou sem séries individuais)
-          if (!isTimeBased && ex.weight && ex.reps && ex.sets) {
-            const weight = parseFloat(ex.weight) || 0;
-            const reps = parseInt(ex.reps) || 0;
-            const sets = parseInt(ex.sets) || 0;
-            if (weight > 0 && reps > 0 && sets > 0) {
-              totalVolume += weight * reps * sets;
-              totalSets += sets;
-            }
-          }
-        }
-      });
-    });
-    
-    const avgVolumePerWorkout = recentWorkouts.length > 0 ? Math.round(totalVolume / recentWorkouts.length) : 0;
-    const totalPRs = prs ? prs.length : 0;
-    const recentPRs = prs ? prs.filter(pr => pr && pr.date && new Date(pr.date) >= monthAgo).length : 0;
-    
-    return {
-      totalWorkouts: workouts ? workouts.length : 0,
-      recentWorkouts: recentWorkouts.length,
-      totalVolume: Math.round(totalVolume),
-      avgVolumePerWorkout,
-      totalSets,
-      totalPRs,
-      recentPRs
-    };
-  };
-
-  const handleDeleteWorkout = async (workoutId) => {
-    if (window.confirm(t('history.confirmDelete'))) {
-      try {
-        await axios.delete(`/api/workouts/${workoutId}`);
-        loadData();
-        alert(t('history.deleteSuccess'));
-      } catch (error) {
-        console.error('Error deleting workout:', error);
-        alert(t('history.deleteError'));
-      }
+  const handleDeleteWorkout = async () => {
+    if (!workoutToDelete) return;
+    try {
+      await axios.delete(`/api/workouts/${workoutToDelete}`);
+      loadData();
+      setShowDeleteWorkoutConfirmModal(false);
+      setWorkoutToDelete(null);
+      setSuccessMessage(t('history.deleteSuccess'));
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Error deleting workout:', error);
+      alert(t('history.deleteError'));
+      setShowDeleteWorkoutConfirmModal(false);
+      setWorkoutToDelete(null);
     }
   };
 
@@ -571,12 +485,56 @@ function App() {
       await axios.post('/api/routines', routineData);
       loadData();
       setSelectedPresetRoutine(null);
-      alert(t('presetRoutines.addSuccess'));
+      setSuccessMessage(t('presetRoutines.addSuccess'));
+      setShowSuccessModal(true);
     } catch (error) {
       console.error('Error adding preset routine:', error);
       alert(t('presetRoutines.addError'));
     }
   };
+
+  const handleDeleteRoutine = async () => {
+    if (!routineToDelete) return;
+    try {
+      await axios.delete(`/api/routines/${routineToDelete.id}`);
+      loadData();
+      setShowDeleteConfirmModal(false);
+      setRoutineToDelete(null);
+      setSuccessMessage(t('routines.deleteSuccess'));
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Error deleting routine:', error);
+      alert(t('routines.deleteError'));
+      setShowDeleteConfirmModal(false);
+      setRoutineToDelete(null);
+    }
+  };
+
+  // Show loading while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="App" style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)'
+      }}>
+        <div style={{ color: '#ffffff', fontSize: '1.2rem' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login screen if not authenticated and not guest
+  if (!isAuthenticated && !isGuest) {
+    return (
+      <LoginScreen 
+        onLogin={handleLogin} 
+        onGuestMode={handleGuestMode}
+        t={t}
+      />
+    );
+  }
 
   return (
     <div className="App">
@@ -585,28 +543,19 @@ function App() {
           <div className="logo-container">
             <img src={require('./assets/logo.png')} alt={t('app.title')} className="app-logo" />
           </div>
-          <div className="language-switcher">
-            <button 
-              className={language === 'en' ? 'active' : ''}
-              onClick={() => changeLanguage('en')}
-              title="English"
-            >
-              🇬🇧 EN
-            </button>
-            <button 
-              className={language === 'pt-BR' ? 'active' : ''}
-              onClick={() => changeLanguage('pt-BR')}
-              title="Português Brasil"
-            >
-              🇧🇷 PT-BR
-            </button>
-            <button 
-              className={language === 'pt-PT' ? 'active' : ''}
-              onClick={() => changeLanguage('pt-PT')}
-              title="Português Portugal"
-            >
-              🇵🇹 PT-PT
-            </button>
+          <div className="header-right">
+            <LanguageSelector
+              language={language}
+              onChange={changeLanguage}
+              t={t}
+            />
+            <UserMenu
+              user={user}
+              isGuest={isGuest}
+              onLogout={handleLogout}
+              onOpenSettings={() => setShowUserSettings(true)}
+              t={t}
+            />
           </div>
         </div>
       </header>
@@ -638,12 +587,6 @@ function App() {
           {t('nav.prs')}
         </button>
         <button 
-          className={activeTab === 'progress' ? 'active' : ''}
-          onClick={() => setActiveTab('progress')}
-        >
-          {t('nav.progress')}
-        </button>
-        <button 
           className={activeTab === 'history' ? 'active' : ''}
           onClick={() => setActiveTab('history')}
         >
@@ -654,11 +597,8 @@ function App() {
       <main className="content">
         {activeTab === 'exercises' && (
           <div className="section">
-            <div className="section-header-with-button">
+            <div className="section-header">
               <h2>{t('exercises.title')}</h2>
-              <button className="btn-create" onClick={() => setShowExerciseForm(true)}>
-                + {t('forms.exercise.title')}
-              </button>
             </div>
             
             {exercises.length > 0 && (
@@ -838,7 +778,7 @@ function App() {
                             }}
                             title={t('prs.edit')}
                           >
-                            ✏️
+                            <img src={require('./assets/icons/icon-settings.png')} alt="Edit" className="btn-icon" />
                           </button>
                           <button 
                             className="btn-delete"
@@ -848,7 +788,7 @@ function App() {
                             }}
                             title={t('prs.delete')}
                           >
-                            🗑️
+                            <img src={iconDelete} alt="Delete" className="btn-icon" />
                           </button>
                         </div>
                       </div>
@@ -907,24 +847,17 @@ function App() {
                           }}
                           title={t('routines.edit')}
                         >
-                          ✏️
+                          <img src={require('./assets/icons/icon-settings.png')} alt="Edit" className="btn-icon" />
                         </button>
                         <button 
                           className="btn-delete"
-                          onClick={async () => {
-                            if (window.confirm(t('routines.confirmDelete'))) {
-                              try {
-                                await axios.delete(`/api/routines/${routine.id}`);
-                                loadData();
-                              } catch (error) {
-                                console.error('Error deleting routine:', error);
-                                alert(t('routines.deleteError'));
-                              }
-                            }
+                          onClick={() => {
+                            setRoutineToDelete(routine);
+                            setShowDeleteConfirmModal(true);
                           }}
                           title={t('routines.delete')}
                         >
-                          🗑️
+                          <img src={iconDelete} alt="Delete" className="btn-icon" />
                         </button>
                       </div>
                     </div>
@@ -966,163 +899,6 @@ function App() {
           </div>
         )}
 
-        {activeTab === 'progress' && (
-          <div className="section">
-            <div className="section-header">
-              <h2>{t('progress.title')}</h2>
-            </div>
-            
-            <div className="progress-stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">💪</div>
-                <div className="stat-content">
-                  <div className="stat-value">{getProgressStats().totalWorkouts}</div>
-                  <div className="stat-label">{t('progress.stats.totalWorkouts')}</div>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">📊</div>
-                <div className="stat-content">
-                  <div className="stat-value">{getProgressStats().totalVolume.toLocaleString()}</div>
-                  <div className="stat-label">{t('progress.stats.totalVolume')}</div>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">🏆</div>
-                <div className="stat-content">
-                  <div className="stat-value">{getProgressStats().totalPRs}</div>
-                  <div className="stat-label">{t('progress.stats.totalPRs')}</div>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">📈</div>
-                <div className="stat-content">
-                  <div className="stat-value">{getProgressStats().avgVolumePerWorkout.toLocaleString()}</div>
-                  <div className="stat-label">{t('progress.stats.avgVolume')}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="charts-container">
-              <div className="chart-card">
-                <h3>{t('progress.charts.volumeOverTime')}</h3>
-                {getWorkoutVolumeData().length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <LineChart data={getWorkoutVolumeData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.3} />
-                      <XAxis 
-                        dataKey="date" 
-                        stroke="#60a5fa"
-                        style={{ fontSize: '12px' }}
-                      />
-                      <YAxis 
-                        stroke="#60a5fa"
-                        style={{ fontSize: '12px' }}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1a1a1a', 
-                          border: '1px solid #3b82f6',
-                          borderRadius: '8px',
-                          color: '#60a5fa'
-                        }}
-                      />
-                      <Legend />
-                      <Line 
-                        type="monotone" 
-                        dataKey="volume" 
-                        stroke="#3b82f6" 
-                        strokeWidth={3}
-                        dot={{ fill: '#60a5fa', r: 4 }}
-                        name={t('progress.charts.volume')}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="empty-chart">{t('progress.charts.noData')}</p>
-                )}
-              </div>
-
-              <div className="chart-card">
-                <h3>{t('progress.charts.workoutsPerWeek')}</h3>
-                {getWorkoutsPerWeekData().length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={getWorkoutsPerWeekData()}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.3} />
-                      <XAxis 
-                        dataKey="week" 
-                        stroke="#60a5fa"
-                        style={{ fontSize: '12px' }}
-                      />
-                      <YAxis 
-                        stroke="#60a5fa"
-                        style={{ fontSize: '12px' }}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1a1a1a', 
-                          border: '1px solid #3b82f6',
-                          borderRadius: '8px',
-                          color: '#60a5fa'
-                        }}
-                      />
-                      <Legend />
-                      <Bar 
-                        dataKey="count" 
-                        fill="#3b82f6"
-                        name={t('progress.charts.workouts')}
-                        radius={[8, 8, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="empty-chart">{t('progress.charts.noData')}</p>
-                )}
-              </div>
-
-              <div className="chart-card">
-                <h3>{t('progress.charts.topExercises')}</h3>
-                {getTopExercisesData().length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={getTopExercisesData()} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#3b82f6" opacity={0.3} />
-                      <XAxis 
-                        type="number"
-                        stroke="#60a5fa"
-                        style={{ fontSize: '12px' }}
-                      />
-                      <YAxis 
-                        type="category"
-                        dataKey="name" 
-                        stroke="#60a5fa"
-                        style={{ fontSize: '12px' }}
-                        width={150}
-                      />
-                      <Tooltip 
-                        contentStyle={{ 
-                          backgroundColor: '#1a1a1a', 
-                          border: '1px solid #3b82f6',
-                          borderRadius: '8px',
-                          color: '#60a5fa'
-                        }}
-                      />
-                      <Legend />
-                      <Bar 
-                        dataKey="count" 
-                        fill="#60a5fa"
-                        name={t('progress.charts.timesPerformed')}
-                        radius={[0, 8, 8, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <p className="empty-chart">{t('progress.charts.noData')}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {activeTab === 'history' && (
           <div className="section">
             <div className="section-header">
@@ -1133,28 +909,28 @@ function App() {
               <>
                 <div className="history-stats">
                   <div className="stat-card">
-                    <div className="stat-icon">📊</div>
+                    <img src={iconChart} alt="Total" className="stat-icon" />
                     <div className="stat-content">
                       <div className="stat-value">{getHistoryStats().total}</div>
                       <div className="stat-label">{t('history.stats.total')}</div>
                     </div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-icon">📅</div>
+                    <img src={iconCalendarDay} alt="Week" className="stat-icon" />
                     <div className="stat-content">
                       <div className="stat-value">{getHistoryStats().thisWeek}</div>
                       <div className="stat-label">{t('history.stats.thisWeek')}</div>
                     </div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-icon">📆</div>
+                    <img src={iconCalendarMonth} alt="Month" className="stat-icon" />
                     <div className="stat-content">
                       <div className="stat-value">{getHistoryStats().thisMonth}</div>
                       <div className="stat-label">{t('history.stats.thisMonth')}</div>
                     </div>
                   </div>
                   <div className="stat-card">
-                    <div className="stat-icon">💪</div>
+                    <img src={iconMuscle} alt="Exercises" className="stat-icon" />
                     <div className="stat-content">
                       <div className="stat-value">{getHistoryStats().totalExercises}</div>
                       <div className="stat-label">{t('history.stats.totalExercises')}</div>
@@ -1202,10 +978,13 @@ function App() {
                       <div className="workout-actions">
                         <button 
                           className="btn-delete-workout"
-                          onClick={() => handleDeleteWorkout(workout.id)}
+                          onClick={() => {
+                            setWorkoutToDelete(workout.id);
+                            setShowDeleteWorkoutConfirmModal(true);
+                          }}
                           title={t('history.delete')}
                         >
-                          🗑️ {t('history.delete')}
+                          <img src={iconDelete} alt="Delete" className="btn-icon" /> {t('history.delete')}
                         </button>
                       </div>
                     </div>
@@ -1231,7 +1010,7 @@ function App() {
                                     }}
                                     title={t('history.sets.viewDetails')}
                                   >
-                                    📊 {t('history.sets.viewDetails')}
+                                    <img src={iconChart} alt="View Details" className="btn-icon" /> {t('history.sets.viewDetails')}
                                   </button>
                                 )}
                               </div>
@@ -1310,7 +1089,7 @@ function App() {
                     </p>
                     <div className="preset-routine-footer">
                       <span className="exercise-count">
-                        💪 {routine.exercises.length} {t('presetRoutines.exercises')}
+                        <img src={iconMuscle} alt="Exercises" className="exercise-count-icon" /> {routine.exercises.length} {t('presetRoutines.exercises')}
                       </span>
                       <span className="view-details">{t('presetRoutines.viewDetails')} →</span>
                     </div>
@@ -1321,13 +1100,6 @@ function App() {
           </div>
         )}
       </main>
-
-      {showExerciseForm && (
-        <ExerciseForm
-          onClose={() => setShowExerciseForm(false)}
-          onSuccess={loadData}
-        />
-      )}
 
       {showPRForm && (
         <PRForm
@@ -1396,6 +1168,46 @@ function App() {
         />
       )}
 
+      {showSuccessModal && (
+        <ConfirmModal
+          title={t('common.success')}
+          message={successMessage}
+          onConfirm={() => setShowSuccessModal(false)}
+          onCancel={null}
+          confirmText={t('common.ok')}
+          cancelText=""
+          isSuccess={true}
+        />
+      )}
+
+      {showDeleteConfirmModal && routineToDelete && (
+        <ConfirmModal
+          title={t('routines.confirmDeleteTitle')}
+          message={t('routines.confirmDeleteMessage')}
+          onConfirm={handleDeleteRoutine}
+          onCancel={() => {
+            setShowDeleteConfirmModal(false);
+            setRoutineToDelete(null);
+          }}
+          confirmText={t('routines.deleteConfirm')}
+          cancelText={t('forms.cancel')}
+        />
+      )}
+
+      {showDeleteWorkoutConfirmModal && workoutToDelete && (
+        <ConfirmModal
+          title={t('history.confirmDeleteTitle')}
+          message={t('history.confirmDeleteMessage')}
+          onConfirm={handleDeleteWorkout}
+          onCancel={() => {
+            setShowDeleteWorkoutConfirmModal(false);
+            setWorkoutToDelete(null);
+          }}
+          confirmText={t('history.deleteConfirm')}
+          cancelText={t('forms.cancel')}
+        />
+      )}
+
       {showWorkoutSetsModal && selectedWorkoutExercise && (
         <WorkoutSetsModal
           exercise={selectedWorkoutExercise.exercise}
@@ -1404,6 +1216,16 @@ function App() {
             setShowWorkoutSetsModal(false);
             setSelectedWorkoutExercise(null);
           }}
+        />
+      )}
+
+      {showUserSettings && (
+        <UserSettings
+          user={user}
+          onClose={() => setShowUserSettings(false)}
+          onLogout={handleLogout}
+          onUserUpdate={handleUserUpdate}
+          t={t}
         />
       )}
 

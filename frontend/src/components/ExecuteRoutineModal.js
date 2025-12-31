@@ -4,6 +4,7 @@ import { useLanguage } from '../App';
 import { getTranslatedExerciseName } from '../i18n/exerciseTranslations';
 import { isTimeBasedExercise } from '../utils/exerciseTypes';
 import { presetRoutines } from '../data/presetRoutines';
+import ConfirmModal from './ConfirmModal';
 import './Form.css';
 import './ExecuteRoutineModal.css';
 
@@ -199,9 +200,9 @@ const ExecuteRoutineModal = ({ routine, onClose, onComplete }) => {
     <>
       <div className="execute-routine-overlay">
         <div className="execute-routine-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="start-routine-header">
+        <div className="execute-routine-header">
           <h2>{translatedRoutine.name}</h2>
-          <button className="start-routine-close-btn" onClick={handleCloseClick}>×</button>
+          <button className="execute-routine-close-btn" onClick={handleCloseClick}>×</button>
         </div>
 
         <div className="execute-routine-progress">
@@ -324,33 +325,14 @@ const ExecuteRoutineModal = ({ routine, onClose, onComplete }) => {
       </div>
 
       {showConfirmClose && (
-        <div className="modal-overlay" onClick={() => setShowConfirmClose(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{t('forms.confirmClose.title')}</h2>
-              <button className="close-btn" onClick={() => setShowConfirmClose(false)}>×</button>
-            </div>
-            <div className="modal-body">
-              <p>{t('forms.confirmClose.message')}</p>
-            </div>
-            <div className="form-actions">
-              <button 
-                type="button" 
-                className="btn-secondary" 
-                onClick={() => setShowConfirmClose(false)}
-              >
-                {t('forms.confirmClose.cancel')}
-              </button>
-              <button 
-                type="button" 
-                className="btn-primary" 
-                onClick={handleConfirmClose}
-              >
-                {t('forms.confirmClose.confirm')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={t('forms.confirmClose.title')}
+          message={t('forms.confirmClose.message')}
+          onConfirm={handleConfirmClose}
+          onCancel={() => setShowConfirmClose(false)}
+          confirmText={t('forms.confirmClose.confirm')}
+          cancelText={t('forms.confirmClose.cancel')}
+        />
       )}
     </>
   );
