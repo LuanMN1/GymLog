@@ -143,5 +143,4 @@ Language can be changed via the language switcher in the application header.
 - ✅ Account deletion with confirmation
 - ✅ Confirmation popups for routine and workout actions
 - ✅ Custom icons and flag icons for language selection
-- 🔄 Progress charts and statistics
 
