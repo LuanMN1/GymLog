@@ -9,9 +9,14 @@ from datetime import datetime, timedelta
 
 def init_data():
     with app.app_context():
-        # Clear existing data
-        db.drop_all()
+        # Create tables if they don't exist
         db.create_all()
+        
+        # Only initialize if exercises don't exist
+        from models import Exercise
+        if Exercise.query.count() > 0:
+            print(f"Exercises already exist ({Exercise.query.count()} exercises). Skipping initialization.")
+            return
         
         # Create sample exercises
         exercises_data = [
