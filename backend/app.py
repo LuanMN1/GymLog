@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, session
+from flask import Flask, jsonify, request, session, Response
 from flask_cors import CORS
 from functools import wraps
 from models import db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise, User
@@ -15,50 +15,59 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None' if os.environ.get('VERCEL') else 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True if os.environ.get('VERCEL') else False
 
-# Configure CORS to allow requests from Vercel frontend
-frontend_url = os.environ.get('FRONTEND_URL', '').strip()
-cors_origins = ['http://localhost:3000']
-
-# Add Vercel URL if provided
-if frontend_url:
-    # Remove trailing slash if present
-    if frontend_url.endswith('/'):
-        frontend_url = frontend_url.rstrip('/')
-    cors_origins.append(frontend_url)
-
-# No Vercel, precisamos permitir qualquer origem *.vercel.app
-# Mas não podemos usar '*' com supports_credentials=True
-# Então vamos usar uma função para validar origens do Vercel
-if os.environ.get('VERCEL'):
-    # Função para validar origens do Vercel
-    def is_valid_origin(origin):
-        if not origin:
-            return False
-        # Permite localhost em desenvolvimento
-        if origin.startswith('http://localhost') or origin.startswith('https://localhost'):
-            return True
-        # Permite qualquer subdomínio do Vercel
-        if '.vercel.app' in origin or '.vercel.sh' in origin:
-            return True
-        # Permite a URL do frontend específica
-        if frontend_url and origin == frontend_url:
-            return True
+# Configure CORS - Handler manual para funcionar corretamente no Vercel
+def is_valid_origin(origin):
+    """Valida se a origem é permitida"""
+    if not origin:
         return False
-    
-    CORS(app, 
-         supports_credentials=True, 
-         origins=is_valid_origin,
-         allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-         expose_headers=['Set-Cookie'])
-else:
-    # Em desenvolvimento local, usar lista específica
-    CORS(app, 
-         supports_credentials=True, 
-         origins=cors_origins if cors_origins else ['http://localhost:3000'],
-         allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-         expose_headers=['Set-Cookie'])
+    # Permite localhost em desenvolvimento
+    if origin.startswith('http://localhost') or origin.startswith('https://localhost'):
+        return True
+    # Permite qualquer subdomínio do Vercel
+    if '.vercel.app' in origin or '.vercel.sh' in origin:
+        return True
+    # Permite a URL do frontend específica se configurada
+    frontend_url = os.environ.get('FRONTEND_URL', '').strip()
+    if frontend_url:
+        if frontend_url.endswith('/'):
+            frontend_url = frontend_url.rstrip('/')
+        if origin == frontend_url:
+            return True
+    return False
+
+# Handler para OPTIONS (preflight) requests - DEVE estar ANTES do CORS
+@app.before_request
+def handle_preflight():
+    if request.method == "OPTIONS":
+        origin = request.headers.get('Origin', '')
+        if is_valid_origin(origin):
+            response = Response()
+            response.headers.add("Access-Control-Allow-Origin", origin)
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With')
+            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
+            response.headers.add('Access-Control-Expose-Headers', 'Set-Cookie')
+            response.headers.add('Access-Control-Max-Age', '3600')
+            return response
+
+# Adiciona headers CORS em todas as respostas
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin', '')
+    if is_valid_origin(origin):
+        response.headers.add("Access-Control-Allow-Origin", origin)
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        response.headers.add('Access-Control-Expose-Headers', 'Set-Cookie')
+    return response
+
+# Configure Flask-CORS como backup (mas o handler manual acima tem prioridade)
+CORS(app, 
+     supports_credentials=True, 
+     origins=is_valid_origin,
+     allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+     expose_headers=['Set-Cookie'])
+
 db.init_app(app)
 
 # Function to initialize exercises data
