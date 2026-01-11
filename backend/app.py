@@ -15,7 +15,7 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None' if os.environ.get('VERCEL') else 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = True if os.environ.get('VERCEL') else False
 
-# Configure CORS - Handler manual para funcionar corretamente no Vercel
+# Configure CORS - Handler manual para funcionar corretamente no Vercel Serverless
 def is_valid_origin(origin):
     """Valida se a origem é permitida"""
     if not origin:
@@ -23,7 +23,7 @@ def is_valid_origin(origin):
     # Permite localhost em desenvolvimento
     if origin.startswith('http://localhost') or origin.startswith('https://localhost'):
         return True
-    # Permite qualquer subdomínio do Vercel
+    # Permite QUALQUER subdomínio do Vercel (importante para preview URLs)
     if '.vercel.app' in origin or '.vercel.sh' in origin:
         return True
     # Permite a URL do frontend específica se configurada
@@ -35,38 +35,42 @@ def is_valid_origin(origin):
             return True
     return False
 
-# Handler para OPTIONS (preflight) requests - DEVE estar ANTES do CORS
+# Handler para OPTIONS (preflight) requests - CRÍTICO para CORS funcionar
 @app.before_request
 def handle_preflight():
     if request.method == "OPTIONS":
         origin = request.headers.get('Origin', '')
         if is_valid_origin(origin):
             response = Response()
-            response.headers.add("Access-Control-Allow-Origin", origin)
-            response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie, X-Requested-With')
-            response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            response.headers.add('Access-Control-Allow-Credentials', 'true')
-            response.headers.add('Access-Control-Expose-Headers', 'Set-Cookie')
-            response.headers.add('Access-Control-Max-Age', '3600')
+            response.headers["Access-Control-Allow-Origin"] = origin
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie, X-Requested-With"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Expose-Headers"] = "Set-Cookie"
+            response.headers["Access-Control-Max-Age"] = "3600"
             return response
 
-# Adiciona headers CORS em todas as respostas
+# Adiciona headers CORS em TODAS as respostas HTTP
 @app.after_request
 def after_request(response):
     origin = request.headers.get('Origin', '')
     if is_valid_origin(origin):
-        response.headers.add("Access-Control-Allow-Origin", origin)
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        response.headers.add('Access-Control-Expose-Headers', 'Set-Cookie')
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Expose-Headers"] = "Set-Cookie"
+        # Adiciona também os headers de métodos e headers permitidos nas respostas normais
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie, X-Requested-With"
     return response
 
-# Configure Flask-CORS como backup (mas o handler manual acima tem prioridade)
-CORS(app, 
-     supports_credentials=True, 
-     origins=is_valid_origin,
-     allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-     expose_headers=['Set-Cookie'])
+# Flask-CORS apenas para desenvolvimento local (desabilitado no Vercel)
+if not os.environ.get('VERCEL'):
+    CORS(app, 
+         supports_credentials=True, 
+         origins=['http://localhost:3000'],
+         allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         expose_headers=['Set-Cookie'])
 
 db.init_app(app)
 
