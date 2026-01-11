@@ -63,8 +63,20 @@ def after_request(response):
         response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie, X-Requested-With"
     return response
 
-# Flask-CORS apenas para desenvolvimento local (desabilitado no Vercel)
-if not os.environ.get('VERCEL'):
+# Flask-CORS: Usar sempre para garantir CORS funcional
+# No Vercel, usar origin_regex para permitir qualquer subdomínio do Vercel
+# No local, usar origins específicas
+if os.environ.get('VERCEL'):
+    # No Vercel, permitir qualquer subdomínio do Vercel
+    import re
+    CORS(app,
+         supports_credentials=True,
+         origin_regex=r'https://.*\.vercel\.app|https://.*\.vercel\.sh',
+         allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         expose_headers=['Set-Cookie'])
+else:
+    # Desenvolvimento local
     CORS(app, 
          supports_credentials=True, 
          origins=['http://localhost:3000'],
