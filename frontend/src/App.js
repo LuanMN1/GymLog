@@ -12,6 +12,7 @@ import StartRoutineModal from './components/StartRoutineModal';
 import ExecuteRoutineModal from './components/ExecuteRoutineModal';
 import PresetRoutineModal from './components/PresetRoutineModal';
 import WorkoutSetsModal from './components/WorkoutSetsModal';
+import EditWorkoutSetsModal from './components/EditWorkoutSetsModal';
 import ConfirmModal from './components/ConfirmModal';
 import LoginScreen from './components/LoginScreen';
 import UserMenu from './components/UserMenu';
@@ -133,6 +134,7 @@ const iconChart = require('./assets/icons/icon-chart.png');
 const iconCalendarDay = require('./assets/icons/icon-calendar-day.png');
 const iconCalendarMonth = require('./assets/icons/icon-calendar-month.png');
 const iconMuscle = require('./assets/icons/icon-muscle.png');
+const iconSettings = require('./assets/icons/icon-settings.png');
 
 const LanguageContext = createContext();
 
@@ -204,6 +206,8 @@ function App() {
   const [selectedPresetRoutine, setSelectedPresetRoutine] = useState(null);
   const [showWorkoutSetsModal, setShowWorkoutSetsModal] = useState(false);
   const [selectedWorkoutExercise, setSelectedWorkoutExercise] = useState(null);
+  const [showEditWorkoutSetsModal, setShowEditWorkoutSetsModal] = useState(false);
+  const [selectedWorkoutForEdit, setSelectedWorkoutForEdit] = useState(null);
   const [expandedRoutines, setExpandedRoutines] = useState(new Set());
   const [exerciseFilter, setExerciseFilter] = useState('all');
   const [historyFilter, setHistoryFilter] = useState('all');
@@ -350,6 +354,21 @@ function App() {
     localStorage.removeItem('gymlog-isAuthenticated');
     localStorage.removeItem('gymlog-user');
     loadData();
+  };
+
+  const handleSaveWorkoutSets = async (workoutId, exerciseId, setsData) => {
+    try {
+      await axios.put(`/api/workouts/${workoutId}/exercises/${exerciseId}/sets`, setsData, {
+        withCredentials: true
+      });
+      // Reload workouts to show updated data
+      loadData();
+      setSuccessMessage(t('history.sets.updateSuccess') || 'Séries atualizadas com sucesso!');
+      setShowSuccessModal(true);
+    } catch (error) {
+      console.error('Error updating workout sets:', error);
+      throw error;
+    }
   };
 
   const handleLogout = async () => {
@@ -1236,19 +1255,35 @@ function App() {
                               <div className="exercise-item-header">
                                 <strong>{idx + 1}. {getTranslatedExerciseName(ex.name, language)}</strong>
                                 {hasSets && (
-                                  <button
-                                    className="btn-view-sets"
-                                    onClick={() => {
-                                      setSelectedWorkoutExercise({
-                                        exercise: { id: ex.id, name: ex.name },
-                                        workoutSets: ex.workout_sets
-                                      });
-                                      setShowWorkoutSetsModal(true);
-                                    }}
-                                    title={t('history.sets.viewDetails')}
-                                  >
-                                    <img src={iconChart} alt="View Details" className="btn-icon" /> {t('history.sets.viewDetails')}
-                                  </button>
+                                  <div className="exercise-actions">
+                                    <button
+                                      className="btn-view-sets"
+                                      onClick={() => {
+                                        setSelectedWorkoutExercise({
+                                          exercise: { id: ex.id, name: ex.name },
+                                          workoutSets: ex.workout_sets
+                                        });
+                                        setShowWorkoutSetsModal(true);
+                                      }}
+                                      title={t('history.sets.viewDetails')}
+                                    >
+                                      <img src={iconChart} alt="View Details" className="btn-icon" /> {t('history.sets.viewDetails')}
+                                    </button>
+                                    <button
+                                      className="btn-edit-sets"
+                                      onClick={() => {
+                                        setSelectedWorkoutForEdit({
+                                          exercise: { id: ex.id, name: ex.name },
+                                          workoutSets: ex.workout_sets,
+                                          workoutId: workout.id
+                                        });
+                                        setShowEditWorkoutSetsModal(true);
+                                      }}
+                                      title={t('history.sets.editSets')}
+                                    >
+                                      <img src={iconSettings} alt="Edit" className="btn-icon" /> {t('history.sets.editSets')}
+                                    </button>
+                                  </div>
                                 )}
                               </div>
                               {isTimeBased ? (
@@ -1453,6 +1488,19 @@ function App() {
             setShowWorkoutSetsModal(false);
             setSelectedWorkoutExercise(null);
           }}
+        />
+      )}
+
+      {showEditWorkoutSetsModal && selectedWorkoutForEdit && (
+        <EditWorkoutSetsModal
+          exercise={selectedWorkoutForEdit.exercise}
+          workoutSets={selectedWorkoutForEdit.workoutSets}
+          workoutId={selectedWorkoutForEdit.workoutId}
+          onClose={() => {
+            setShowEditWorkoutSetsModal(false);
+            setSelectedWorkoutForEdit(null);
+          }}
+          onSave={handleSaveWorkoutSets}
         />
       )}
 

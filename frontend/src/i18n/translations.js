@@ -64,9 +64,9 @@ export const translations = {
     forms: {
       create: "Create",
       update: "Update",
+      save: "Save",
       cancel: "Cancel",
       saving: "Saving...",
-      update: "Update",
       validation: {
         nameRequired: "Name is required",
         exerciseRequired: "Please select an exercise",
@@ -220,7 +220,12 @@ export const translations = {
         weight: "Weight",
         duration: "Duration",
         viewDetails: "View Sets",
-        noSets: "No sets recorded for this exercise."
+        editSets: "Edit Sets",
+        addSet: "Add Set",
+        removeSet: "Remove Set",
+        noSets: "No sets recorded for this exercise.",
+        updateSuccess: "Sets updated successfully!",
+        saveError: "Error saving sets."
       }
     },
     presetRoutines: {
@@ -350,6 +355,7 @@ export const translations = {
     forms: {
       create: "Criar",
       update: "Atualizar",
+      save: "Salvar",
       cancel: "Cancelar",
       saving: "Salvando...",
       validation: {
@@ -499,7 +505,12 @@ export const translations = {
         weight: "Carga",
         duration: "Duração",
         viewDetails: "Ver Séries",
-        noSets: "Nenhuma série registrada para este exercício."
+        editSets: "Editar Séries",
+        addSet: "Adicionar Série",
+        removeSet: "Remover Série",
+        noSets: "Nenhuma série registrada para este exercício.",
+        updateSuccess: "Séries atualizadas com sucesso!",
+        saveError: "Erro ao salvar séries."
       }
     },
     presetRoutines: {
@@ -638,6 +649,7 @@ export const translations = {
     forms: {
       create: "Criar",
       update: "Atualizar",
+      save: "Guardar",
       cancel: "Cancelar",
       saving: "A guardar...",
       validation: {
@@ -789,7 +801,12 @@ export const translations = {
         weight: "Carga",
         duration: "Duração",
         viewDetails: "Ver Séries",
-        noSets: "Nenhuma série registrada para este exercício."
+        editSets: "Editar Séries",
+        addSet: "Adicionar Série",
+        removeSet: "Remover Série",
+        noSets: "Nenhuma série registrada para este exercício.",
+        updateSuccess: "Séries atualizadas com sucesso!",
+        saveError: "Erro ao salvar séries."
       }
     },
     presetRoutines: {

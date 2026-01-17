@@ -1,0 +1,270 @@
+.edit-workout-sets-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.edit-workout-sets-modal {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  border-radius: 12px;
+  padding: 0;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-workout-sets-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.edit-workout-sets-header h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.edit-workout-sets-header .close-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.edit-workout-sets-header .close-btn:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.edit-workout-sets-content {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.sets-header {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr 40px;
+  gap: 15px;
+  padding: 10px 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.sets-header.time-based {
+  grid-template-columns: 60px 1fr 40px;
+}
+
+.set-number-header,
+.set-reps-header,
+.set-weight-header,
+.set-duration-header,
+.set-actions-header {
+  color: #fff;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.set-item {
+  display: grid;
+  grid-template-columns: 60px 1fr 1fr 40px;
+  gap: 15px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.set-item:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.set-item.time-based {
+  grid-template-columns: 60px 1fr 40px;
+}
+
+.set-number {
+  font-weight: 600;
+  color: #4a9eff;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
+.set-input {
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 1rem;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.set-input:focus {
+  outline: none;
+  border-color: #4a9eff;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.set-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.set-reps-input,
+.set-weight-input {
+  text-align: right;
+}
+
+.set-duration-input {
+  font-family: monospace;
+}
+
+.btn-remove-set {
+  background: rgba(255, 0, 0, 0.3);
+  border: 2px solid rgba(255, 0, 0, 0.5);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.5rem;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  padding: 0;
+}
+
+.btn-remove-set:hover:not(:disabled) {
+  background: rgba(255, 0, 0, 0.5);
+  border-color: rgba(255, 0, 0, 0.7);
+}
+
+.btn-remove-set:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.btn-add-set {
+  width: 100%;
+  padding: 12px;
+  background: rgba(74, 158, 255, 0.2);
+  border: 2px dashed rgba(74, 158, 255, 0.5);
+  border-radius: 8px;
+  color: #4a9eff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add-set:hover {
+  background: rgba(74, 158, 255, 0.3);
+  border-color: rgba(74, 158, 255, 0.7);
+}
+
+.edit-workout-sets-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 20px;
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.btn-cancel,
+.btn-save {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-save {
+  background: #4a9eff;
+  color: #fff;
+}
+
+.btn-save:hover:not(:disabled) {
+  background: #3b82f6;
+}
+
+.btn-cancel:disabled,
+.btn-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .edit-workout-sets-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .sets-header,
+  .set-item {
+    grid-template-columns: 50px 1fr 1fr 35px;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .sets-header.time-based,
+  .set-item.time-based {
+    grid-template-columns: 50px 1fr 35px;
+  }
+
+  .edit-workout-sets-header h2 {
+    font-size: 1.2rem;
+  }
+}
+

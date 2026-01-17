@@ -651,11 +651,57 @@ def create_workout():
     return jsonify({'id': workout.id, 'message': 'Workout created successfully'}), 201
 
 @app.route('/api/workouts/<int:workout_id>', methods=['DELETE'])
+@login_required
 def delete_workout(workout_id):
     workout = Workout.query.get_or_404(workout_id)
     db.session.delete(workout)
     db.session.commit()
     return jsonify({'message': 'Workout deleted successfully'})
+
+@app.route('/api/workouts/<int:workout_id>/exercises/<int:exercise_id>/sets', methods=['PUT'])
+@login_required
+def update_workout_sets(workout_id, exercise_id):
+    """Update workout sets for a specific exercise in a workout"""
+    workout = Workout.query.get_or_404(workout_id)
+    
+    # Find the workout exercise
+    workout_exercise = WorkoutExercise.query.filter_by(
+        workout_id=workout_id,
+        exercise_id=exercise_id
+    ).first()
+    
+    if not workout_exercise:
+        return jsonify({'error': 'Workout exercise not found'}), 404
+    
+    data = request.json
+    workout_sets_data = data.get('workout_sets', [])
+    
+    # Delete existing sets
+    WorkoutSet.query.filter_by(workout_exercise_id=workout_exercise.id).delete()
+    
+    # Create new sets
+    for set_data in workout_sets_data:
+        workout_set = WorkoutSet(
+            workout_exercise_id=workout_exercise.id,
+            set_number=set_data.get('set_number', 0),
+            reps=set_data.get('reps', 0),
+            weight=set_data.get('weight', 0),
+            duration=set_data.get('duration', 0)
+        )
+        db.session.add(workout_set)
+    
+    # Update workout exercise summary (optional - can recalculate from sets)
+    if 'sets' in data:
+        workout_exercise.sets = data.get('sets', len(workout_sets_data))
+    if 'reps' in data:
+        workout_exercise.reps = data.get('reps', 0)
+    if 'weight' in data:
+        workout_exercise.weight = data.get('weight', 0)
+    if 'duration' in data:
+        workout_exercise.duration = data.get('duration', 0)
+    
+    db.session.commit()
+    return jsonify({'message': 'Workout sets updated successfully'})
 
 # PR Routes
 @app.route('/api/prs', methods=['GET'])
