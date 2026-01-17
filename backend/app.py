@@ -77,7 +77,7 @@ if frontend_url:
 CORS(app, 
      supports_credentials=True, 
      origins=cors_origins,
-     allow_headers=['Content-Type', 'Authorization'],
+     allow_headers=['Content-Type', 'Authorization', 'X-User-ID', 'X-Is-Guest'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 db.init_app(app)
 
