@@ -3,6 +3,7 @@
 
 import sys
 import os
+import traceback
 
 # Adiciona o diretório pai ao path para importar o app
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -17,20 +18,33 @@ try:
     
     # Exporta o app Flask como handler para Vercel
     # O Vercel Python runtime usa o app WSGI diretamente
+    # Para a nova versão do Vercel, exportamos o app diretamente
     handler = app
     
 except Exception as e:
-    # Se houver erro no import, criamos um handler que retorna erro
-    from flask import Flask
+    # Se houver erro no import, criamos um handler que retorna erro detalhado
+    from flask import Flask, jsonify
+    
     error_app = Flask(__name__)
+    error_message = str(e)
+    error_traceback = traceback.format_exc()
+    
+    # Log do erro para debug
+    print("=" * 50)
+    print("ERROR: Failed to import app")
+    print("=" * 50)
+    print(f"Error: {error_message}")
+    print(f"Traceback:\n{error_traceback}")
+    print("=" * 50)
     
     @error_app.route('/', defaults={'path': ''})
     @error_app.route('/<path:path>')
     def error_handler(path):
-        return {
+        return jsonify({
             'error': 'Failed to initialize application',
-            'message': str(e)
-        }, 500
+            'message': error_message,
+            'hint': 'Check Vercel logs for full traceback. Common issues: missing DATABASE_URL, import errors, or missing dependencies.'
+        }), 500
     
     handler = error_app
 

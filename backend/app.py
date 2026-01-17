@@ -1,175 +1,176 @@
-from flask import Flask, jsonify, request, session, Response
+from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from functools import wraps
 from models import db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise, User
 from datetime import datetime
 import os
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+
+# Carrega variáveis de ambiente de arquivo .env se existir
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv não é obrigatório, mas recomendado para desenvolvimento
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///gymlog.db').replace('postgres://', 'postgresql://')
+
+# Configure database URL for Supabase/PostgreSQL
+def get_database_url():
+    database_url = os.environ.get('DATABASE_URL', 'sqlite:///gymlog.db')
+    
+    # Se for SQLite, retorna direto
+    if database_url.startswith('sqlite'):
+        return database_url
+    
+    # Para PostgreSQL/Supabase, normaliza a URL
+    # Supabase pode usar 'postgres://' mas SQLAlchemy precisa de 'postgresql://'
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    # Parse da URL para adicionar parâmetros SSL se necessário
+    parsed = urlparse(database_url)
+    query_params = parse_qs(parsed.query)
+    
+    # Adiciona SSL mode se não estiver presente (necessário para Supabase)
+    if 'sslmode' not in query_params:
+        query_params['sslmode'] = ['require']
+    
+    # Reconstrói a URL com os parâmetros
+    new_query = urlencode(query_params, doseq=True)
+    new_parsed = parsed._replace(query=new_query)
+    database_url = urlunparse(new_parsed)
+    
+    return database_url
+
+database_url = get_database_url()
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Configurações de engine para PostgreSQL (Supabase)
+if 'postgresql' in database_url:
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,  # Verifica conexões antes de usar
+        'pool_recycle': 300,     # Recicla conexões após 5 minutos
+        'connect_args': {
+            'connect_timeout': 10
+        }
+    }
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
-# Configure session to be more persistent
-app.config['PERMANENT_SESSION_LIFETIME'] = 86400 * 30  # 30 days
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None' if os.environ.get('VERCEL') else 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = True if os.environ.get('VERCEL') else False
 
-# Configure CORS - Handler manual para funcionar corretamente no Vercel Serverless
-def is_valid_origin(origin):
-    """Valida se a origem é permitida"""
-    if not origin:
-        return False
-    # Permite localhost em desenvolvimento
-    if origin.startswith('http://localhost') or origin.startswith('https://localhost'):
-        return True
-    # Permite QUALQUER subdomínio do Vercel (importante para preview URLs)
-    if '.vercel.app' in origin or '.vercel.sh' in origin:
-        return True
-    # Permite a URL do frontend específica se configurada
-    frontend_url = os.environ.get('FRONTEND_URL', '').strip()
-    if frontend_url:
-        if frontend_url.endswith('/'):
-            frontend_url = frontend_url.rstrip('/')
-        if origin == frontend_url:
-            return True
-    return False
+# Configure CORS to allow requests from Vercel frontend
+frontend_url = os.environ.get('FRONTEND_URL', '')
+cors_origins = ['http://localhost:3000']
 
-# Handler para OPTIONS (preflight) requests - CRÍTICO para CORS funcionar
-@app.before_request
-def handle_preflight():
-    if request.method == "OPTIONS":
-        origin = request.headers.get('Origin', '')
-        if is_valid_origin(origin):
-            response = Response()
-            response.headers["Access-Control-Allow-Origin"] = origin
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie, X-Requested-With"
-            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Expose-Headers"] = "Set-Cookie"
-            response.headers["Access-Control-Max-Age"] = "3600"
-            return response
+# Add Vercel URL if provided
+if frontend_url:
+    cors_origins.append(frontend_url)
 
-# Adiciona headers CORS em TODAS as respostas HTTP
-@app.after_request
-def after_request(response):
-    origin = request.headers.get('Origin', '')
-    if is_valid_origin(origin):
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Expose-Headers"] = "Set-Cookie"
-        # Adiciona também os headers de métodos e headers permitidos nas respostas normais
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Cookie, X-Requested-With"
-    return response
-
-# Flask-CORS: Usar sempre para garantir CORS funcional
-# No Vercel, usar origin_regex para permitir qualquer subdomínio do Vercel
-# No local, usar origins específicas
-if os.environ.get('VERCEL'):
-    # No Vercel, permitir qualquer subdomínio do Vercel
-    import re
-    CORS(app,
-         supports_credentials=True,
-         origin_regex=r'https://.*\.vercel\.app|https://.*\.vercel\.sh',
-         allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-         expose_headers=['Set-Cookie'])
-else:
-    # Desenvolvimento local
-    CORS(app, 
-         supports_credentials=True, 
-         origins=['http://localhost:3000'],
-         allow_headers=['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
-         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-         expose_headers=['Set-Cookie'])
-
+# Allow all Vercel domains (for preview deployments)
+CORS(app, 
+     supports_credentials=True, 
+     origins=cors_origins,
+     allow_headers=['Content-Type', 'Authorization'],
+     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
 db.init_app(app)
 
-# Function to initialize exercises data
-def initialize_exercises():
-    """Initialize exercises in the database if empty. Should be called within app context."""
-    try:
-        # Create tables if they don't exist
-        db.create_all()
-        
-        # Check if exercises already exist
-        if Exercise.query.count() > 0:
-            return False  # Already initialized
-        
-        exercises_data = [
-            # Chest
-            {'name': 'Bench Press', 'category': 'Chest', 'description': 'Chest development exercise'},
-            {'name': 'Incline Bench Press', 'category': 'Chest', 'description': 'Upper chest development'},
-            {'name': 'Decline Bench Press', 'category': 'Chest', 'description': 'Lower chest development'},
-            # Triceps
-            {'name': 'Tricep Pushdown', 'category': 'Triceps', 'description': 'Tricep extension'},
-            {'name': 'Tricep Kickback', 'category': 'Triceps', 'description': 'Tricep isolation exercise'},
-            {'name': 'Overhead Tricep Extension', 'category': 'Triceps', 'description': 'Tricep extension overhead'},
-            {'name': 'French Press', 'category': 'Triceps', 'description': 'Tricep isolation with barbell'},
-            # Back
-            {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
-            {'name': 'Low Row', 'category': 'Back', 'description': 'Mid-back development with low cable'},
-            {'name': 'T-Bar Row', 'category': 'Back', 'description': 'Back width development'},
-            {'name': 'High Row', 'category': 'Back', 'description': 'Upper back development'},
-            # Biceps
-            {'name': 'Barbell Curl', 'category': 'Biceps', 'description': 'Bicep isolation'},
-            {'name': 'Scott Curl', 'category': 'Biceps', 'description': 'Bicep isolation on preacher bench'},
-            {'name': 'Hammer Curl', 'category': 'Biceps', 'description': 'Brachialis and bicep development'},
-            {'name': '45 Degree Curl', 'category': 'Biceps', 'description': 'Bicep curl at 45 degree angle'},
-            # Legs
-            {'name': 'Squat', 'category': 'Legs', 'description': 'Fundamental leg exercise'},
-            {'name': 'Leg Press', 'category': 'Legs', 'description': 'Quadriceps development'},
-            {'name': 'Leg Extension', 'category': 'Legs', 'description': 'Quadriceps isolation'},
-            {'name': 'Leg Curl', 'category': 'Legs', 'description': 'Hamstring isolation'},
-            {'name': 'Calf Raise', 'category': 'Legs', 'description': 'Calf development'},
-            {'name': 'Smith Machine Squat', 'category': 'Legs', 'description': 'Squat with guided bar'},
-            # Shoulders
-            {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
-            {'name': 'Lateral Raise', 'category': 'Shoulders', 'description': 'Lateral deltoid isolation'},
-            {'name': 'Front Raise', 'category': 'Shoulders', 'description': 'Front deltoid development'},
-            {'name': 'Rear Delt Fly', 'category': 'Shoulders', 'description': 'Rear deltoid isolation'},
-            {'name': 'Arnold Press', 'category': 'Shoulders', 'description': 'Complete shoulder development'},
-            # Forearms
-            {'name': 'Wrist Curl', 'category': 'Forearms', 'description': 'Forearm flexor development'},
-            {'name': 'Reverse Wrist Curl', 'category': 'Forearms', 'description': 'Forearm extensor development'},
-            {'name': 'Farmer\'s Walk', 'category': 'Forearms', 'description': 'Grip strength and forearm endurance'},
-            # Core/Abdomen
-            {'name': 'Crunches', 'category': 'Core', 'description': 'Upper abdominals'},
-            {'name': 'Leg Raises', 'category': 'Core', 'description': 'Lower abdominals'},
-            {'name': 'Plank', 'category': 'Core', 'description': 'Core stability and endurance'},
-            {'name': 'Russian Twist', 'category': 'Core', 'description': 'Oblique development'},
-            {'name': 'Mountain Climbers', 'category': 'Core', 'description': 'Full core workout'},
-            {'name': 'Ab Wheel', 'category': 'Core', 'description': 'Advanced core strength'},
-        ]
-        
-        for ex_data in exercises_data:
-            exercise = Exercise(**ex_data)
-            db.session.add(exercise)
-        
-        db.session.commit()
-        print(f"Initialized {len(exercises_data)} exercises in database")
-        return True  # Successfully initialized
-    except Exception as e:
-        print(f"Error initializing exercises: {str(e)}")
-        db.session.rollback()
-        return False  # Failed to initialize
-
-# Create tables and initialize exercises on startup (para desenvolvimento local)
-# No Vercel serverless, fazemos isso de forma lazy nas rotas para evitar erros
-# Não inicializamos aqui no Vercel para evitar timeouts e erros de conexão
-if not os.environ.get('VERCEL'):
-    # Apenas no ambiente local tentamos inicializar no startup
+# Create tables and initialize exercises
+def initialize_database():
+    """Initialize database tables and default data"""
     try:
         with app.app_context():
+            # Create all tables
             db.create_all()
-            initialize_exercises()
+            print("Database tables created successfully")
+            
+            # Initialize exercises if database is empty
+            try:
+                exercise_count = Exercise.query.count()
+                if exercise_count == 0:
+                    exercises_data = [
+                        # Chest
+                        {'name': 'Bench Press', 'category': 'Chest', 'description': 'Chest development exercise'},
+                        {'name': 'Incline Bench Press', 'category': 'Chest', 'description': 'Upper chest development'},
+                        {'name': 'Decline Bench Press', 'category': 'Chest', 'description': 'Lower chest development'},
+                        # Triceps
+                        {'name': 'Tricep Pushdown', 'category': 'Triceps', 'description': 'Tricep extension'},
+                        {'name': 'Tricep Kickback', 'category': 'Triceps', 'description': 'Tricep isolation exercise'},
+                        {'name': 'Overhead Tricep Extension', 'category': 'Triceps', 'description': 'Tricep extension overhead'},
+                        {'name': 'French Press', 'category': 'Triceps', 'description': 'Tricep isolation with barbell'},
+                        # Back
+                        {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
+                        {'name': 'Low Row', 'category': 'Back', 'description': 'Mid-back development with low cable'},
+                        {'name': 'T-Bar Row', 'category': 'Back', 'description': 'Back width development'},
+                        {'name': 'High Row', 'category': 'Back', 'description': 'Upper back development'},
+                        # Biceps
+                        {'name': 'Barbell Curl', 'category': 'Biceps', 'description': 'Bicep isolation'},
+                        {'name': 'Scott Curl', 'category': 'Biceps', 'description': 'Bicep isolation on preacher bench'},
+                        {'name': 'Hammer Curl', 'category': 'Biceps', 'description': 'Brachialis and bicep development'},
+                        {'name': '45 Degree Curl', 'category': 'Biceps', 'description': 'Bicep curl at 45 degree angle'},
+                        # Legs
+                        {'name': 'Squat', 'category': 'Legs', 'description': 'Fundamental leg exercise'},
+                        {'name': 'Leg Press', 'category': 'Legs', 'description': 'Quadriceps development'},
+                        {'name': 'Leg Extension', 'category': 'Legs', 'description': 'Quadriceps isolation'},
+                        {'name': 'Leg Curl', 'category': 'Legs', 'description': 'Hamstring isolation'},
+                        {'name': 'Calf Raise', 'category': 'Legs', 'description': 'Calf development'},
+                        {'name': 'Smith Machine Squat', 'category': 'Legs', 'description': 'Squat with guided bar'},
+                        # Shoulders
+                        {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
+                        {'name': 'Lateral Raise', 'category': 'Shoulders', 'description': 'Lateral deltoid isolation'},
+                        {'name': 'Front Raise', 'category': 'Shoulders', 'description': 'Front deltoid development'},
+                        {'name': 'Rear Delt Fly', 'category': 'Shoulders', 'description': 'Rear deltoid isolation'},
+                        {'name': 'Arnold Press', 'category': 'Shoulders', 'description': 'Complete shoulder development'},
+                        # Forearms
+                        {'name': 'Wrist Curl', 'category': 'Forearms', 'description': 'Forearm flexor development'},
+                        {'name': 'Reverse Wrist Curl', 'category': 'Forearms', 'description': 'Forearm extensor development'},
+                        {'name': 'Farmer\'s Walk', 'category': 'Forearms', 'description': 'Grip strength and forearm endurance'},
+                        # Core/Abdomen
+                        {'name': 'Crunches', 'category': 'Core', 'description': 'Upper abdominals'},
+                        {'name': 'Leg Raises', 'category': 'Core', 'description': 'Lower abdominals'},
+                        {'name': 'Plank', 'category': 'Core', 'description': 'Core stability and endurance'},
+                        {'name': 'Russian Twist', 'category': 'Core', 'description': 'Oblique development'},
+                        {'name': 'Mountain Climbers', 'category': 'Core', 'description': 'Full core workout'},
+                        {'name': 'Ab Wheel', 'category': 'Core', 'description': 'Advanced core strength'},
+                    ]
+                    
+                    for ex_data in exercises_data:
+                        exercise = Exercise(**ex_data)
+                        db.session.add(exercise)
+                    
+                    db.session.commit()
+                    print(f"Initialized {len(exercises_data)} exercises in database")
+                else:
+                    print(f"Exercises already exist ({exercise_count} exercises)")
+            except Exception as e:
+                print(f"Error initializing exercises: {e}")
+                db.session.rollback()
     except Exception as e:
-        print(f"Warning: Could not initialize exercises on startup: {str(e)}")
-        print("Exercises will be initialized on first API call")
-else:
-    # No Vercel, apenas criamos as tabelas, não inicializamos exercícios aqui
-    print("Running on Vercel - initialization will happen on first API call")
+        print(f"Error initializing database: {e}")
+        import traceback
+        traceback.print_exc()
+
+# Initialize database lazily (only when needed, not on import)
+# This prevents errors in serverless environments like Vercel
+_db_initialized = False
+
+def ensure_database_initialized():
+    """Ensure database is initialized, but only once"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            initialize_database()
+            _db_initialized = True
+        except Exception as e:
+            print(f"Warning: Database initialization failed: {e}")
+            import traceback
+            traceback.print_exc()
+            # Don't fail completely, let it try again on next request
+
+# Initialize database on first request
+@app.before_request
+def before_request():
+    """Initialize database before first request"""
+    ensure_database_initialized()
 
 # Helper function to get current user
 def get_current_user():
@@ -213,7 +214,6 @@ def register():
     
     session['user_id'] = user.id
     session['is_guest'] = False
-    session.permanent = True  # Make session persistent
     
     return jsonify({
         'message': 'Registration successful',
@@ -241,7 +241,6 @@ def login():
     
     session['user_id'] = user.id
     session['is_guest'] = False
-    session.permanent = True  # Make session persistent
     
     return jsonify({
         'message': 'Login successful',
@@ -278,7 +277,6 @@ def get_current_user_info():
 def guest_login():
     session['is_guest'] = True
     session.pop('user_id', None)
-    session.permanent = True  # Make session persistent
     return jsonify({'message': 'Guest mode activated'})
 
 @app.route('/api/auth/profile', methods=['PUT'])
@@ -338,45 +336,121 @@ def health_check():
     })
 
 # Initialize exercises route (can be called manually if needed)
-# This route uses the same initialize_exercises function for consistency
 @app.route('/api/init-exercises', methods=['POST'])
 def init_exercises():
-    try:
-        db.create_all()
-        if Exercise.query.count() > 0:
-            return jsonify({
-                'message': 'Exercises already exist', 
-                'count': Exercise.query.count()
-            }), 200
-        
-        # Use the shared initialization function
-        if initialize_exercises():
-            count = Exercise.query.count()
-            return jsonify({
-                'message': f'Initialized {count} exercises successfully', 
-                'count': count
-            }), 201
-        else:
-            return jsonify({
-                'error': 'Failed to initialize exercises'
-            }), 500
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({
-            'error': f'Error initializing exercises: {str(e)}'
-        }), 500
+    if Exercise.query.count() > 0:
+        return jsonify({'message': 'Exercises already exist', 'count': Exercise.query.count()}), 200
+    
+    exercises_data = [
+        # Chest
+        {'name': 'Bench Press', 'category': 'Chest', 'description': 'Chest development exercise'},
+        {'name': 'Incline Bench Press', 'category': 'Chest', 'description': 'Upper chest development'},
+        {'name': 'Decline Bench Press', 'category': 'Chest', 'description': 'Lower chest development'},
+        # Triceps
+        {'name': 'Tricep Pushdown', 'category': 'Triceps', 'description': 'Tricep extension'},
+        {'name': 'Tricep Kickback', 'category': 'Triceps', 'description': 'Tricep isolation exercise'},
+        {'name': 'Overhead Tricep Extension', 'category': 'Triceps', 'description': 'Tricep extension overhead'},
+        {'name': 'French Press', 'category': 'Triceps', 'description': 'Tricep isolation with barbell'},
+        # Back
+        {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
+        {'name': 'Low Row', 'category': 'Back', 'description': 'Mid-back development with low cable'},
+        {'name': 'T-Bar Row', 'category': 'Back', 'description': 'Back width development'},
+        {'name': 'High Row', 'category': 'Back', 'description': 'Upper back development'},
+        # Biceps
+        {'name': 'Barbell Curl', 'category': 'Biceps', 'description': 'Bicep isolation'},
+        {'name': 'Scott Curl', 'category': 'Biceps', 'description': 'Bicep isolation on preacher bench'},
+        {'name': 'Hammer Curl', 'category': 'Biceps', 'description': 'Brachialis and bicep development'},
+        {'name': '45 Degree Curl', 'category': 'Biceps', 'description': 'Bicep curl at 45 degree angle'},
+        # Legs
+        {'name': 'Squat', 'category': 'Legs', 'description': 'Fundamental leg exercise'},
+        {'name': 'Leg Press', 'category': 'Legs', 'description': 'Quadriceps development'},
+        {'name': 'Leg Extension', 'category': 'Legs', 'description': 'Quadriceps isolation'},
+        {'name': 'Leg Curl', 'category': 'Legs', 'description': 'Hamstring isolation'},
+        {'name': 'Calf Raise', 'category': 'Legs', 'description': 'Calf development'},
+        {'name': 'Smith Machine Squat', 'category': 'Legs', 'description': 'Squat with guided bar'},
+        # Shoulders
+        {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
+        {'name': 'Lateral Raise', 'category': 'Shoulders', 'description': 'Lateral deltoid isolation'},
+        {'name': 'Front Raise', 'category': 'Shoulders', 'description': 'Front deltoid development'},
+        {'name': 'Rear Delt Fly', 'category': 'Shoulders', 'description': 'Rear deltoid isolation'},
+        {'name': 'Arnold Press', 'category': 'Shoulders', 'description': 'Complete shoulder development'},
+        # Forearms
+        {'name': 'Wrist Curl', 'category': 'Forearms', 'description': 'Forearm flexor development'},
+        {'name': 'Reverse Wrist Curl', 'category': 'Forearms', 'description': 'Forearm extensor development'},
+        {'name': 'Farmer\'s Walk', 'category': 'Forearms', 'description': 'Grip strength and forearm endurance'},
+        # Core/Abdomen
+        {'name': 'Crunches', 'category': 'Core', 'description': 'Upper abdominals'},
+        {'name': 'Leg Raises', 'category': 'Core', 'description': 'Lower abdominals'},
+        {'name': 'Plank', 'category': 'Core', 'description': 'Core stability and endurance'},
+        {'name': 'Russian Twist', 'category': 'Core', 'description': 'Oblique development'},
+        {'name': 'Mountain Climbers', 'category': 'Core', 'description': 'Full core workout'},
+        {'name': 'Ab Wheel', 'category': 'Core', 'description': 'Advanced core strength'},
+    ]
+    
+    for ex_data in exercises_data:
+        exercise = Exercise(**ex_data)
+        db.session.add(exercise)
+    
+    db.session.commit()
+    return jsonify({'message': f'Initialized {len(exercises_data)} exercises successfully', 'count': len(exercises_data)}), 201
 
 # Exercise Routes
 @app.route('/api/exercises', methods=['GET'])
 def list_exercises():
-    # Ensure exercises are initialized (important for Vercel serverless)
-    # This is called lazy initialization - only when needed
-    try:
-        db.create_all()
-        if Exercise.query.count() == 0:
-            initialize_exercises()
-    except Exception as e:
-        print(f"Error checking/initializing exercises: {str(e)}")
+    # Check if exercises exist, if not, initialize them
+    if Exercise.query.count() == 0:
+        # Initialize exercises
+        exercises_data = [
+            # Chest
+            {'name': 'Bench Press', 'category': 'Chest', 'description': 'Chest development exercise'},
+            {'name': 'Incline Bench Press', 'category': 'Chest', 'description': 'Upper chest development'},
+            {'name': 'Decline Bench Press', 'category': 'Chest', 'description': 'Lower chest development'},
+            # Triceps
+            {'name': 'Tricep Pushdown', 'category': 'Triceps', 'description': 'Tricep extension'},
+            {'name': 'Tricep Kickback', 'category': 'Triceps', 'description': 'Tricep isolation exercise'},
+            {'name': 'Overhead Tricep Extension', 'category': 'Triceps', 'description': 'Tricep extension overhead'},
+            {'name': 'French Press', 'category': 'Triceps', 'description': 'Tricep isolation with barbell'},
+            # Back
+            {'name': 'Deadlift', 'category': 'Back', 'description': 'Complete back and posterior exercise'},
+            {'name': 'Low Row', 'category': 'Back', 'description': 'Mid-back development with low cable'},
+            {'name': 'T-Bar Row', 'category': 'Back', 'description': 'Back width development'},
+            {'name': 'High Row', 'category': 'Back', 'description': 'Upper back development'},
+            # Biceps
+            {'name': 'Barbell Curl', 'category': 'Biceps', 'description': 'Bicep isolation'},
+            {'name': 'Scott Curl', 'category': 'Biceps', 'description': 'Bicep isolation on preacher bench'},
+            {'name': 'Hammer Curl', 'category': 'Biceps', 'description': 'Brachialis and bicep development'},
+            {'name': '45 Degree Curl', 'category': 'Biceps', 'description': 'Bicep curl at 45 degree angle'},
+            # Legs
+            {'name': 'Squat', 'category': 'Legs', 'description': 'Fundamental leg exercise'},
+            {'name': 'Leg Press', 'category': 'Legs', 'description': 'Quadriceps development'},
+            {'name': 'Leg Extension', 'category': 'Legs', 'description': 'Quadriceps isolation'},
+            {'name': 'Leg Curl', 'category': 'Legs', 'description': 'Hamstring isolation'},
+            {'name': 'Calf Raise', 'category': 'Legs', 'description': 'Calf development'},
+            {'name': 'Smith Machine Squat', 'category': 'Legs', 'description': 'Squat with guided bar'},
+            # Shoulders
+            {'name': 'Overhead Press', 'category': 'Shoulders', 'description': 'Shoulder development with barbell'},
+            {'name': 'Lateral Raise', 'category': 'Shoulders', 'description': 'Lateral deltoid isolation'},
+            {'name': 'Front Raise', 'category': 'Shoulders', 'description': 'Front deltoid development'},
+            {'name': 'Rear Delt Fly', 'category': 'Shoulders', 'description': 'Rear deltoid isolation'},
+            {'name': 'Arnold Press', 'category': 'Shoulders', 'description': 'Complete shoulder development'},
+            # Forearms
+            {'name': 'Wrist Curl', 'category': 'Forearms', 'description': 'Forearm flexor development'},
+            {'name': 'Reverse Wrist Curl', 'category': 'Forearms', 'description': 'Forearm extensor development'},
+            {'name': 'Farmer\'s Walk', 'category': 'Forearms', 'description': 'Grip strength and forearm endurance'},
+            # Core/Abdomen
+            {'name': 'Crunches', 'category': 'Core', 'description': 'Upper abdominals'},
+            {'name': 'Leg Raises', 'category': 'Core', 'description': 'Lower abdominals'},
+            {'name': 'Plank', 'category': 'Core', 'description': 'Core stability and endurance'},
+            {'name': 'Russian Twist', 'category': 'Core', 'description': 'Oblique development'},
+            {'name': 'Mountain Climbers', 'category': 'Core', 'description': 'Full core workout'},
+            {'name': 'Ab Wheel', 'category': 'Core', 'description': 'Advanced core strength'},
+        ]
+        
+        for ex_data in exercises_data:
+            exercise = Exercise(**ex_data)
+            db.session.add(exercise)
+        
+        db.session.commit()
     
     exercises = Exercise.query.all()
     return jsonify([{
@@ -597,49 +671,29 @@ def list_routines():
 @app.route('/api/routines', methods=['POST'])
 @login_required
 def create_routine():
-    # login_required allows both authenticated users and guests
-    try:
-        data = request.json
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        if not data.get('name'):
-            return jsonify({'error': 'Routine name is required'}), 400
-        
-        if not data.get('exercises') or len(data.get('exercises', [])) == 0:
-            return jsonify({'error': 'At least one exercise is required'}), 400
-        
-        user = get_current_user()
-        routine = Routine(
-            name=data['name'],
-            description=data.get('description', ''),
-            preset_id=data.get('preset_id', None),
-            user_id=user.id if user else None
+    data = request.json
+    user = get_current_user()
+    routine = Routine(
+        name=data['name'],
+        description=data.get('description', ''),
+        preset_id=data.get('preset_id', None),
+        user_id=user.id if user else None
+    )
+    db.session.add(routine)
+    
+    for idx, ex_data in enumerate(data.get('exercises', [])):
+        routine_exercise = RoutineExercise(
+            routine=routine,
+            exercise_id=ex_data['exercise_id'],
+            sets=ex_data.get('sets', 0),
+            reps=ex_data.get('reps', 0),
+            order=ex_data.get('order', idx),
+            notes=ex_data.get('notes', '')
         )
-        db.session.add(routine)
-        db.session.flush()  # Get the routine ID
-        
-        for idx, ex_data in enumerate(data.get('exercises', [])):
-            if not ex_data.get('exercise_id'):
-                db.session.rollback()
-                return jsonify({'error': f'Exercise ID is required for exercise at position {idx + 1}'}), 400
-            
-            routine_exercise = RoutineExercise(
-                routine=routine,
-                exercise_id=ex_data['exercise_id'],
-                sets=ex_data.get('sets', 0),
-                reps=ex_data.get('reps', 0),
-                order=ex_data.get('order', idx),
-                notes=ex_data.get('notes', '')
-            )
-            db.session.add(routine_exercise)
-        
-        db.session.commit()
-        return jsonify({'id': routine.id, 'message': 'Routine created successfully'}), 201
-    except Exception as e:
-        db.session.rollback()
-        print(f"Error creating routine: {str(e)}")
-        return jsonify({'error': f'Failed to create routine: {str(e)}'}), 500
+        db.session.add(routine_exercise)
+    
+    db.session.commit()
+    return jsonify({'id': routine.id, 'message': 'Routine created successfully'}), 201
 
 @app.route('/api/routines/<int:routine_id>', methods=['GET'])
 def get_routine(routine_id):
