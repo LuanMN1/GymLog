@@ -27,8 +27,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer
+  Legend
 } from 'recharts';
 
 // Configure axios to use credentials and base URL
@@ -95,9 +94,6 @@ const iconChart = require('./assets/icons/icon-chart.png');
 const iconCalendarDay = require('./assets/icons/icon-calendar-day.png');
 const iconCalendarMonth = require('./assets/icons/icon-calendar-month.png');
 const iconMuscle = require('./assets/icons/icon-muscle.png');
-const iconChartLine = require('./assets/icons/icon-chart-line.png');
-const iconWorkout = require('./assets/icons/icon-workout.png');
-const iconAdd = require('./assets/icons/icon-add.png');
 
 const LanguageContext = createContext();
 
@@ -400,7 +396,7 @@ function App() {
   };
 
   // Função para obter nome e descrição traduzidos de uma rotina
-  const getTranslatedRoutine = (routine) => {
+  const getTranslatedRoutine = React.useCallback((routine) => {
     if (routine.preset_id) {
       const presetRoutine = presetRoutines.find(pr => pr.id === routine.preset_id);
       if (presetRoutine) {
@@ -415,7 +411,7 @@ function App() {
       name: routine.name,
       description: routine.description
     };
-  };
+  }, [language]);
 
   // Memoizar rotinas traduzidas para garantir atualização quando o idioma mudar
   const translatedRoutines = React.useMemo(() => {
@@ -423,7 +419,7 @@ function App() {
       ...routine,
       translated: getTranslatedRoutine(routine)
     }));
-  }, [routines, language]);
+  }, [routines, getTranslatedRoutine]);
 
   // Função para obter nome traduzido de um workout
   const getTranslatedWorkout = (workout) => {
@@ -658,7 +654,7 @@ function App() {
 
   const handleAddPresetRoutine = async (routineData) => {
     try {
-      const response = await axios.post('/api/routines', routineData, {
+      await axios.post('/api/routines', routineData, {
         withCredentials: true
       });
       loadData();
@@ -677,8 +673,8 @@ function App() {
         const savedUser = localStorage.getItem('gymlog-user');
         if (savedUser) {
           try {
-            const userData = JSON.parse(savedUser);
-            // User data exists but session expired - show message
+            JSON.parse(savedUser); // User data exists but session expired
+            // Show message
             alert(t('auth.sessionExpired') || 'Sua sessão expirou. Por favor, faça login novamente.');
           } catch (e) {
             // Invalid data

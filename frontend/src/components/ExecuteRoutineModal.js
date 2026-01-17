@@ -140,7 +140,6 @@ const ExecuteRoutineModal = ({ routine, onClose, onComplete }) => {
         preset_id: routine.preset_id || null,
         exercises: workoutData.exercises.map(ex => {
           const sets = ex.sets.length;
-          const firstSet = ex.sets[0] || {};
           
           const exerciseName = routine.exercises.find(e => e.id === ex.exercise_id)?.name || '';
           const isTimeBased = isTimeBasedExercise(exerciseName);
