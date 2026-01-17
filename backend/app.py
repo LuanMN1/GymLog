@@ -170,7 +170,12 @@ def ensure_database_initialized():
 @app.before_request
 def before_request():
     """Initialize database before first request"""
-    ensure_database_initialized()
+    try:
+        ensure_database_initialized()
+    except Exception as e:
+        # Don't fail the request if initialization fails
+        # It will be retried on next request
+        print(f"Warning: Database initialization in before_request failed: {e}")
 
 # Helper function to get current user
 def get_current_user():
@@ -330,10 +335,27 @@ def delete_account():
 # Health check route
 @app.route('/api/health', methods=['GET'])
 def health_check():
-    return jsonify({
-        'status': 'ok',
-        'exercises_count': Exercise.query.count()
-    })
+    """Health check endpoint - verifies backend is running"""
+    try:
+        # Try to get exercise count, but don't fail if database isn't ready
+        try:
+            exercises_count = Exercise.query.count()
+        except Exception as db_error:
+            # Database might not be initialized yet
+            exercises_count = None
+            print(f"Database not ready yet: {db_error}")
+        
+        return jsonify({
+            'status': 'ok',
+            'exercises_count': exercises_count,
+            'message': 'Backend is running'
+        })
+    except Exception as e:
+        # If something else fails, still return a response
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 # Initialize exercises route (can be called manually if needed)
 @app.route('/api/init-exercises', methods=['POST'])
