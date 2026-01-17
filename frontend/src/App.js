@@ -34,6 +34,38 @@ import {
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = api.baseURL;
 
+// Add request interceptor to include auth headers for serverless environments
+axios.interceptors.request.use(
+  (config) => {
+    // Get user info from localStorage
+    const savedUser = localStorage.getItem('gymlog-user');
+    const isAuthenticated = localStorage.getItem('gymlog-isAuthenticated') === 'true';
+    const isGuest = localStorage.getItem('gymlog-isGuest') === 'true';
+    
+    // Add user ID header if authenticated (fallback for serverless where sessions may not persist)
+    if (isAuthenticated && savedUser && !isGuest) {
+      try {
+        const userData = JSON.parse(savedUser);
+        if (userData.id) {
+          config.headers['X-User-ID'] = userData.id;
+        }
+      } catch (e) {
+        // Invalid user data
+      }
+    }
+    
+    // Add guest header if in guest mode
+    if (isGuest) {
+      config.headers['X-Is-Guest'] = 'true';
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Create a ref to store the setState functions (will be set in App component)
 let authStateSetters = null;
 

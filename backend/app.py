@@ -58,6 +58,13 @@ if 'postgresql' in database_url:
     }
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
 
+# Configure session settings for Vercel (serverless)
+# Sessions need to work across different serverless function instances
+app.config['SESSION_COOKIE_SECURE'] = True  # HTTPS only
+app.config['SESSION_COOKIE_HTTPONLY'] = True  # Prevent XSS
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'  # Allow cross-origin (Vercel frontend/backend)
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+
 # Configure CORS to allow requests from Vercel frontend
 frontend_url = os.environ.get('FRONTEND_URL', '')
 cors_origins = ['http://localhost:3000']
@@ -179,7 +186,18 @@ def before_request():
 
 # Helper function to get current user
 def get_current_user():
+    # Try to get from session first
     user_id = session.get('user_id')
+    
+    # Fallback: try to get from header (for serverless environments like Vercel)
+    if not user_id:
+        auth_header = request.headers.get('X-User-ID')
+        if auth_header:
+            try:
+                user_id = int(auth_header)
+            except (ValueError, TypeError):
+                pass
+    
     if user_id:
         return User.query.get(user_id)
     return None
@@ -188,8 +206,31 @@ def get_current_user():
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session and not session.get('is_guest'):
-            return jsonify({'error': 'Unauthorized'}), 401
+        # Check session first
+        user_id = session.get('user_id')
+        is_guest = session.get('is_guest', False)
+        
+        # Fallback: check header (for serverless environments where sessions may not persist)
+        if not user_id and not is_guest:
+            auth_header = request.headers.get('X-User-ID')
+            if auth_header:
+                try:
+                    user_id = int(auth_header)
+                    # Set in session for this request
+                    session['user_id'] = user_id
+                    session['is_guest'] = False
+                except (ValueError, TypeError):
+                    pass
+        
+        # Check guest header as fallback
+        if not user_id and not is_guest:
+            is_guest_header = request.headers.get('X-Is-Guest')
+            if is_guest_header and is_guest_header.lower() == 'true':
+                is_guest = True
+                session['is_guest'] = True
+        
+        if not user_id and not is_guest:
+            return jsonify({'error': 'Unauthorized', 'message': 'Please login or use guest mode'}), 401
         return f(*args, **kwargs)
     return decorated_function
 
@@ -217,6 +258,7 @@ def register():
     db.session.add(user)
     db.session.commit()
     
+    session.permanent = True
     session['user_id'] = user.id
     session['is_guest'] = False
     
@@ -244,6 +286,7 @@ def login():
     if not user or not user.check_password(password):
         return jsonify({'error': 'Invalid email or password'}), 401
     
+    session.permanent = True
     session['user_id'] = user.id
     session['is_guest'] = False
     
@@ -280,6 +323,7 @@ def get_current_user_info():
 
 @app.route('/api/auth/guest', methods=['POST'])
 def guest_login():
+    session.permanent = True
     session['is_guest'] = True
     session.pop('user_id', None)
     return jsonify({'message': 'Guest mode activated'})
