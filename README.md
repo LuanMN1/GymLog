@@ -2,11 +2,15 @@
 
 A fullstack application for managing gym workouts, tracking personal records (PRs), and monitoring fitness progress.
 
+## 🌐 Live Demo
+
+**Live Application**: [https://gymlog-frontend.vercel.app](https://gymlog-frontend.vercel.app)
+
 ## Technologies
 
 - **Frontend**: React with i18n support (English, Portuguese BR, Portuguese PT)
 - **Backend**: Python (Flask)
-- **Database**: SQLite
+- **Database**: SQLite (local development) / PostgreSQL (production)
 
 ## Features
 
@@ -21,6 +25,7 @@ A fullstack application for managing gym workouts, tracking personal records (PR
 - ✅ Preset workout routines library
 - ✅ Dynamic translation for routines and workouts
 - ✅ Individual set tracking for workouts
+- ✅ Edit workout sets from history
 - ✅ Exercise notes translation
 - ✅ Collapsible exercise lists in routines
 - ✅ Edit and delete PRs with custom confirmation modals
@@ -143,4 +148,5 @@ Language can be changed via the language switcher in the application header.
 - ✅ Account deletion with confirmation
 - ✅ Confirmation popups for routine and workout actions
 - ✅ Custom icons and flag icons for language selection
+- ✅ Edit workout sets from history tab
 
