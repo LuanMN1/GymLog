@@ -39,16 +39,23 @@ let authStateSetters = null;
 
 // Axios interceptor to handle 401 errors
 let isRestoringSession = false;
+let justLoggedIn = false; // Flag to prevent auto-guest conversion right after login
 
 axios.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Don't auto-convert to guest if user just logged in (within last 5 seconds)
+    if (justLoggedIn) {
+      return Promise.reject(error);
+    }
+    
     if (error.response?.status === 401 && authStateSetters && !isRestoringSession) {
       // Session expired, try to restore as guest
       const savedUser = localStorage.getItem('gymlog-user');
       const wasAuthenticated = localStorage.getItem('gymlog-isAuthenticated') === 'true';
       const isAlreadyGuest = localStorage.getItem('gymlog-isGuest') === 'true';
       
+      // Only convert to guest if user was authenticated for a while (not just logged in)
       if (wasAuthenticated && savedUser && !isAlreadyGuest) {
         // User was authenticated but session expired
         // Try to activate guest mode automatically
@@ -289,6 +296,13 @@ function App() {
     localStorage.setItem('gymlog-user', JSON.stringify(userData));
     localStorage.setItem('gymlog-isAuthenticated', 'true');
     localStorage.removeItem('gymlog-isGuest');
+    
+    // Set flag to prevent interceptor from converting to guest right after login
+    justLoggedIn = true;
+    setTimeout(() => {
+      justLoggedIn = false;
+    }, 5000); // 5 seconds grace period
+    
     loadData();
   };
 
