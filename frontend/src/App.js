@@ -1254,8 +1254,8 @@ function App() {
                             <div key={idx} className="exercicio-item">
                               <div className="exercise-item-header">
                                 <strong>{idx + 1}. {getTranslatedExerciseName(ex.name, language)}</strong>
-                                {hasSets && (
-                                  <div className="exercise-actions">
+                                <div className="exercise-actions">
+                                  {hasSets && (
                                     <button
                                       className="btn-view-sets"
                                       onClick={() => {
@@ -1269,22 +1269,22 @@ function App() {
                                     >
                                       <img src={iconChart} alt="View Details" className="btn-icon" /> {t('history.sets.viewDetails')}
                                     </button>
-                                    <button
-                                      className="btn-edit-sets"
-                                      onClick={() => {
-                                        setSelectedWorkoutForEdit({
-                                          exercise: { id: ex.id, name: ex.name },
-                                          workoutSets: ex.workout_sets,
-                                          workoutId: workout.id
-                                        });
-                                        setShowEditWorkoutSetsModal(true);
-                                      }}
-                                      title={t('history.sets.editSets')}
-                                    >
-                                      <img src={iconSettings} alt="Edit" className="btn-icon" /> {t('history.sets.editSets')}
-                                    </button>
-                                  </div>
-                                )}
+                                  )}
+                                  <button
+                                    className="btn-edit-sets"
+                                    onClick={() => {
+                                      setSelectedWorkoutForEdit({
+                                        exercise: { id: ex.id, name: ex.name },
+                                        workoutSets: ex.workout_sets || [],
+                                        workoutId: workout.id
+                                      });
+                                      setShowEditWorkoutSetsModal(true);
+                                    }}
+                                    title={t('history.sets.editSets')}
+                                  >
+                                    <img src={iconSettings} alt="Edit" className="btn-icon" /> {t('history.sets.editSets')}
+                                  </button>
+                                </div>
                               </div>
                               {isTimeBased ? (
                                 <span>
