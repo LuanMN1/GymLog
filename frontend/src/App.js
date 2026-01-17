@@ -411,7 +411,7 @@ function App() {
       name: routine.name,
       description: routine.description
     };
-  }, [language]);
+  }, [language, presetRoutines]);
 
   // Memoizar rotinas traduzidas para garantir atualização quando o idioma mudar
   const translatedRoutines = React.useMemo(() => {
