@@ -119,7 +119,6 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
           <div className="landing-hero-visual">
             <div className="landing-stats-circle">
               <div className="landing-stats-value">95%</div>
-              <div className="landing-stats-label">{t('landing.hero.successRate')}</div>
             </div>
           </div>
         </div>

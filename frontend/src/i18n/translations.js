@@ -270,8 +270,7 @@ export const translations = {
         title: "ELEVATE YOUR WORKOUT GAME",
         subtitle: "Track your progress. Break your records. Build your best physique.",
         description: "Built by fitness enthusiasts, based on what actually works for tracking workouts and achieving goals.",
-        cta: "GET YOUR FREE PLAN",
-        successRate: "SUCCESS RATE"
+        cta: "Start for free"
       },
       features: {
         title: "POWERFUL FEATURES BACKED BY REAL DATA",
@@ -647,8 +646,7 @@ export const translations = {
         title: "ELEVE SEU NÍVEL DE TREINO",
         subtitle: "Acompanhe seu progresso. Quebre seus recordes. Construa seu melhor físico.",
         description: "Criado por entusiastas do fitness, baseado no que realmente funciona para acompanhar treinos e alcançar objetivos.",
-        cta: "OBTENHA SEU PLANO GRATUITO",
-        successRate: "TAXA DE SUCESSO"
+        cta: "Comece grátis"
       },
       features: {
         title: "RECURSOS PODEROSOS BASEADOS EM DADOS REAIS",
@@ -1026,8 +1024,7 @@ export const translations = {
         title: "ELEVE O SEU NÍVEL DE TREINO",
         subtitle: "Acompanhe o seu progresso. Quebre os seus recordes. Construa o seu melhor físico.",
         description: "Criado por entusiastas do fitness, baseado no que realmente funciona para acompanhar treinos e alcançar objetivos.",
-        cta: "OBTENHA O SEU PLANO GRATUITO",
-        successRate: "TAXA DE SUCESSO"
+        cta: "Comece grátis"
       },
       features: {
         title: "RECURSOS PODEROSOS BASEADOS EM DADOS REAIS",
