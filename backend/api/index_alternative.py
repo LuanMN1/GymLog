@@ -18,3 +18,4 @@ from app import app
 # O Vercel detecta automaticamente apps WSGI
 handler = app
 
+

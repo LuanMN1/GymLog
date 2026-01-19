@@ -264,6 +264,89 @@ export const translations = {
       guestDescription: "Explore the app without creating an account. Perfect for recruiters and portfolio reviewers.",
       logout: "Logout"
     },
+    landing: {
+      signIn: "Sign In",
+      hero: {
+        title: "ELEVATE YOUR WORKOUT GAME",
+        subtitle: "Track your progress. Break your records. Build your best physique.",
+        description: "Built by fitness enthusiasts, based on what actually works for tracking workouts and achieving goals.",
+        cta: "GET YOUR FREE PLAN",
+        successRate: "SUCCESS RATE"
+      },
+      features: {
+        title: "POWERFUL FEATURES BACKED BY REAL DATA",
+        subtitle: "We combine exercise tracking, progress monitoring, and smart routines to help you achieve your fitness goals.",
+        tracking: {
+          title: "COMPREHENSIVE TRACKING",
+          description: "Track every exercise, set, rep, and weight with detailed workout history and statistics."
+        },
+        prs: {
+          title: "PERSONAL RECORDS",
+          description: "Monitor your personal records and celebrate every milestone in your fitness journey."
+        },
+        routines: {
+          title: "CUSTOM ROUTINES",
+          description: "Create and save your favorite workout routines for quick access anytime."
+        },
+        stats: {
+          title: "DETAILED STATS",
+          description: "Visualize your progress with charts and graphs showing your workout history and trends."
+        },
+        multilang: {
+          title: "MULTI-LANGUAGE",
+          description: "Available in English, Portuguese (BR), and Portuguese (PT). Full exercise name translations."
+        },
+        preset: {
+          title: "PRESET ROUTINES",
+          description: "Choose from a library of pre-built routines designed by fitness experts."
+        }
+      },
+      howItWorks: {
+        title: "YOUR FITNESS PLAN IN 3 SIMPLE STEPS",
+        subtitle: "No fitness degree required. Just sign up and start tracking!",
+        step1: {
+          title: "CREATE YOUR ACCOUNT",
+          description: "Sign up in less than a minute and start tracking your workouts immediately."
+        },
+        step2: {
+          title: "TRACK YOUR WORKOUTS",
+          description: "Log your exercises, sets, reps, and weights. Monitor your progress in real-time."
+        },
+        step3: {
+          title: "ANALYZE AND IMPROVE",
+          description: "Follow your progress, break records, and optimize your training based on data."
+        }
+      },
+      data: {
+        title: "SMARTER TRAINING BACKED BY REAL DATA",
+        subtitle: "We combine exercise tracking, progress monitoring, and smart routines to calculate your success likelihood then turn it into actionable insights.",
+        consistency: "CONSISTENCY",
+        factor1: {
+          title: "TRACKING",
+          description: "Monitor every session"
+        },
+        factor2: {
+          title: "PROGRESS",
+          description: "See your improvement"
+        },
+        factor3: {
+          title: "ROUTINES",
+          description: "Structured workouts"
+        },
+        factor4: {
+          title: "RECORDS",
+          description: "Break your limits"
+        },
+        cta: "TURN INSIGHTS INTO ACTION"
+      },
+      form: {
+        title: "GET STARTED TODAY",
+        subtitle: "Join thousands of fitness enthusiasts tracking their progress"
+      },
+      footer: {
+        text: "Built by fitness enthusiasts, for fitness enthusiasts. Start your journey today."
+      }
+    },
     userMenu: {
       settings: "Settings"
     },
@@ -557,6 +640,89 @@ export const translations = {
       guestMode: "Experimentar como Convidado",
       guestDescription: "Explore o aplicativo sem criar uma conta. Perfeito para recrutadores e revisores de portfólio.",
       logout: "Sair"
+    },
+    landing: {
+      signIn: "Entrar",
+      hero: {
+        title: "ELEVE SEU NÍVEL DE TREINO",
+        subtitle: "Acompanhe seu progresso. Quebre seus recordes. Construa seu melhor físico.",
+        description: "Criado por entusiastas do fitness, baseado no que realmente funciona para acompanhar treinos e alcançar objetivos.",
+        cta: "OBTENHA SEU PLANO GRATUITO",
+        successRate: "TAXA DE SUCESSO"
+      },
+      features: {
+        title: "RECURSOS PODEROSOS BASEADOS EM DADOS REAIS",
+        subtitle: "Combinamos acompanhamento de exercícios, monitoramento de progresso e rotinas inteligentes para ajudá-lo a alcançar seus objetivos de fitness.",
+        tracking: {
+          title: "ACOMPANHAMENTO COMPLETO",
+          description: "Acompanhe cada exercício, série, repetição e peso com histórico detalhado de treinos e estatísticas."
+        },
+        prs: {
+          title: "RECORDES PESSOAIS",
+          description: "Monitore seus recordes pessoais e celebre cada marco em sua jornada fitness."
+        },
+        routines: {
+          title: "ROTINAS PERSONALIZADAS",
+          description: "Crie e salve suas rotinas de treino favoritas para acesso rápido a qualquer momento."
+        },
+        stats: {
+          title: "ESTATÍSTICAS DETALHADAS",
+          description: "Visualize seu progresso com gráficos mostrando seu histórico de treinos e tendências."
+        },
+        multilang: {
+          title: "MULTI-IDIOMA",
+          description: "Disponível em Inglês, Português (BR) e Português (PT). Traduções completas de nomes de exercícios."
+        },
+        preset: {
+          title: "ROTINAS PRONTAS",
+          description: "Escolha entre uma biblioteca de rotinas pré-criadas projetadas por especialistas em fitness."
+        }
+      },
+      howItWorks: {
+        title: "SEU PLANO DE FITNESS EM 3 PASSOS SIMPLES",
+        subtitle: "Sem diploma de educação física necessário. Apenas cadastre-se e comece a acompanhar!",
+        step1: {
+          title: "CRIE SUA CONTA",
+          description: "Cadastre-se em menos de um minuto e comece a acompanhar seus treinos imediatamente."
+        },
+        step2: {
+          title: "ACOMPANHE SEUS TREINOS",
+          description: "Registre seus exercícios, séries, repetições e pesos. Monitore seu progresso em tempo real."
+        },
+        step3: {
+          title: "ANALISE E MELHORE",
+          description: "Acompanhe seu progresso, quebre recordes e otimize seu treino com base em dados."
+        }
+      },
+      data: {
+        title: "TREINO MAIS INTELIGENTE BASEADO EM DADOS REAIS",
+        subtitle: "Combinamos acompanhamento de exercícios, monitoramento de progresso e rotinas inteligentes para calcular sua probabilidade de sucesso e transformá-la em insights acionáveis.",
+        consistency: "CONSISTÊNCIA",
+        factor1: {
+          title: "ACOMPANHAMENTO",
+          description: "Monitore cada sessão"
+        },
+        factor2: {
+          title: "PROGRESSO",
+          description: "Veja sua melhoria"
+        },
+        factor3: {
+          title: "ROTINAS",
+          description: "Treinos estruturados"
+        },
+        factor4: {
+          title: "RECORDES",
+          description: "Quebre seus limites"
+        },
+        cta: "TRANSFORME INSIGHTS EM AÇÃO"
+      },
+      form: {
+        title: "COMECE HOJE",
+        subtitle: "Junte-se a milhares de entusiastas do fitness acompanhando seu progresso"
+      },
+      footer: {
+        text: "Criado por entusiastas do fitness, para entusiastas do fitness. Comece sua jornada hoje."
+      }
     },
     userMenu: {
       settings: "Configurações"
@@ -853,6 +1019,89 @@ export const translations = {
       guestMode: "Experimentar como Convidado",
       guestDescription: "Explore a aplicação sem criar uma conta. Perfeito para recrutadores e revisores de portfólio.",
       logout: "Terminar Sessão"
+    },
+    landing: {
+      signIn: "Iniciar Sessão",
+      hero: {
+        title: "ELEVE O SEU NÍVEL DE TREINO",
+        subtitle: "Acompanhe o seu progresso. Quebre os seus recordes. Construa o seu melhor físico.",
+        description: "Criado por entusiastas do fitness, baseado no que realmente funciona para acompanhar treinos e alcançar objetivos.",
+        cta: "OBTENHA O SEU PLANO GRATUITO",
+        successRate: "TAXA DE SUCESSO"
+      },
+      features: {
+        title: "RECURSOS PODEROSOS BASEADOS EM DADOS REAIS",
+        subtitle: "Combinamos acompanhamento de exercícios, monitoramento de progresso e rotinas inteligentes para ajudá-lo a alcançar os seus objetivos de fitness.",
+        tracking: {
+          title: "ACOMPANHAMENTO COMPLETO",
+          description: "Acompanhe cada exercício, série, repetição e peso com histórico detalhado de treinos e estatísticas."
+        },
+        prs: {
+          title: "RECORDES PESSOAIS",
+          description: "Monitore os seus recordes pessoais e celebre cada marco na sua jornada fitness."
+        },
+        routines: {
+          title: "ROTINAS PERSONALIZADAS",
+          description: "Crie e guarde as suas rotinas de treino favoritas para acesso rápido a qualquer momento."
+        },
+        stats: {
+          title: "ESTATÍSTICAS DETALHADAS",
+          description: "Visualize o seu progresso com gráficos mostrando o seu histórico de treinos e tendências."
+        },
+        multilang: {
+          title: "MULTI-IDIOMA",
+          description: "Disponível em Inglês, Português (BR) e Português (PT). Traduções completas de nomes de exercícios."
+        },
+        preset: {
+          title: "ROTINAS PRONTAS",
+          description: "Escolha entre uma biblioteca de rotinas pré-criadas projetadas por especialistas em fitness."
+        }
+      },
+      howItWorks: {
+        title: "O SEU PLANO DE FITNESS EM 3 PASSOS SIMPLES",
+        subtitle: "Sem diploma de educação física necessário. Apenas registe-se e comece a acompanhar!",
+        step1: {
+          title: "CRIE A SUA CONTA",
+          description: "Registe-se em menos de um minuto e comece a acompanhar os seus treinos imediatamente."
+        },
+        step2: {
+          title: "ACOMPANHE OS SEUS TREINOS",
+          description: "Registe os seus exercícios, séries, repetições e pesos. Monitore o seu progresso em tempo real."
+        },
+        step3: {
+          title: "ANALISE E MELHORE",
+          description: "Acompanhe o seu progresso, quebre recordes e otimize o seu treino com base em dados."
+        }
+      },
+      data: {
+        title: "TREINO MAIS INTELIGENTE BASEADO EM DADOS REAIS",
+        subtitle: "Combinamos acompanhamento de exercícios, monitoramento de progresso e rotinas inteligentes para calcular a sua probabilidade de sucesso e transformá-la em insights acionáveis.",
+        consistency: "CONSISTÊNCIA",
+        factor1: {
+          title: "ACOMPANHAMENTO",
+          description: "Monitore cada sessão"
+        },
+        factor2: {
+          title: "PROGRESSO",
+          description: "Veja a sua melhoria"
+        },
+        factor3: {
+          title: "ROTINAS",
+          description: "Treinos estruturados"
+        },
+        factor4: {
+          title: "RECORDES",
+          description: "Quebre os seus limites"
+        },
+        cta: "TRANSFORME INSIGHTS EM AÇÃO"
+      },
+      form: {
+        title: "COMECE HOJE",
+        subtitle: "Junte-se a milhares de entusiastas do fitness acompanhando o seu progresso"
+      },
+      footer: {
+        text: "Criado por entusiastas do fitness, para entusiastas do fitness. Comece a sua jornada hoje."
+      }
     },
     userMenu: {
       settings: "Definições"

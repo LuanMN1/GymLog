@@ -14,7 +14,7 @@ import PresetRoutineModal from './components/PresetRoutineModal';
 import WorkoutSetsModal from './components/WorkoutSetsModal';
 import EditWorkoutSetsModal from './components/EditWorkoutSetsModal';
 import ConfirmModal from './components/ConfirmModal';
-import LoginScreen from './components/LoginScreen';
+import LandingPage from './components/LandingPage';
 import UserMenu from './components/UserMenu';
 import UserSettings from './components/UserSettings';
 import LanguageSelector from './components/LanguageSelector';
@@ -781,13 +781,15 @@ function App() {
     );
   }
 
-  // Show login screen if not authenticated and not guest
+  // Show landing page if not authenticated and not guest
   if (!isAuthenticated && !isGuest) {
     return (
-      <LoginScreen 
+      <LandingPage 
         onLogin={handleLogin} 
         onGuestMode={handleGuestMode}
         t={t}
+        language={language}
+        changeLanguage={changeLanguage}
       />
     );
   }
