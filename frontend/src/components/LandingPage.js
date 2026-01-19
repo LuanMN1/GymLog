@@ -88,7 +88,6 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
         <div className="landing-header-content">
           <div className="landing-logo-container">
             <img src={require('../assets/logo.png')} alt={t('app.title')} className="landing-logo" />
-            <span className="landing-logo-text">{t('app.title')}</span>
           </div>
           <div className="landing-header-actions">
             <LanguageSelector language={language} onChange={changeLanguage} t={t} />
@@ -417,7 +416,6 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
         <div className="landing-footer-content">
           <div className="landing-footer-logo">
             <img src={require('../assets/logo.png')} alt={t('app.title')} className="landing-footer-logo-img" />
-            <span>{t('app.title')}</span>
           </div>
           <p className="landing-footer-text">{t('landing.footer.text')}</p>
         </div>
