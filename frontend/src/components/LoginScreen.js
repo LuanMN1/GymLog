@@ -79,12 +79,11 @@ const LoginScreen = ({ onLogin, onGuestMode, onBack, initialMode = 'login', t, l
   return (
     <div className="login-screen">
       <div className="login-container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="login-topbar">
           <button
             type="button"
             onClick={onBack || (() => {})}
-            className="tab-button"
-            style={{ width: 'auto', padding: '10px 14px' }}
+            className="login-back-btn"
           >
             ← {language === 'en' ? 'Back' : 'Voltar'}
           </button>
