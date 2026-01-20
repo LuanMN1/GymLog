@@ -191,6 +191,7 @@ function App() {
     };
   }, []);
   const [exercises, setExercises] = useState([]);
+  const [isLoadingExercises, setIsLoadingExercises] = useState(false);
   const [prs, setPRs] = useState([]);
   const [routines, setRoutines] = useState([]);
   const [workouts, setWorkouts] = useState([]);
@@ -338,8 +339,6 @@ function App() {
     setTimeout(() => {
       justLoggedIn = false;
     }, 5000); // 5 seconds grace period
-    
-    loadData();
   };
 
   const handleUserUpdate = (updatedUser) => {
@@ -353,7 +352,6 @@ function App() {
     localStorage.setItem('gymlog-isGuest', 'true');
     localStorage.removeItem('gymlog-isAuthenticated');
     localStorage.removeItem('gymlog-user');
-    loadData();
   };
 
   const handleSaveWorkoutSets = async (workoutId, exerciseId, setsData) => {
@@ -394,6 +392,7 @@ function App() {
   };
 
   const loadData = async () => {
+    setIsLoadingExercises(true);
     try {
       console.log('Loading data from:', api.baseURL);
       
@@ -446,6 +445,8 @@ function App() {
       setPRs([]);
       setRoutines([]);
       setWorkouts([]);
+    } finally {
+      setIsLoadingExercises(false);
     }
   };
 
@@ -856,7 +857,15 @@ function App() {
         {activeTab === 'exercises' && (
           <div className="section">
             <div className="section-header">
-              <h2>{t('exercises.title')}</h2>
+              <div className="section-title-row">
+                <h2>{t('exercises.title')}</h2>
+                {isLoadingExercises && exercises.length > 0 && (
+                  <div className="loading-pill" aria-label={t('common.loading')}>
+                    <span className="spinner" aria-hidden="true"></span>
+                    <span>{t('common.loading')}</span>
+                  </div>
+                )}
+              </div>
             </div>
             
             {exercises.length > 0 && (
@@ -930,7 +939,23 @@ function App() {
               </div>
             )}
             
-            {exercises.length === 0 ? (
+            {isLoadingExercises && exercises.length === 0 ? (
+              <>
+                <div className="loading-center" role="status" aria-live="polite">
+                  <span className="spinner" aria-hidden="true"></span>
+                  <span className="loading-text">{t('common.loading')}</span>
+                </div>
+                <div className="grid" aria-hidden="true">
+                  {Array.from({ length: itemsPerPage }).map((_, idx) => (
+                    <div key={`exercise-skeleton-${idx}`} className="card skeleton-card">
+                      <div className="skeleton-line skeleton-title"></div>
+                      <div className="skeleton-line skeleton-subtitle"></div>
+                      <div className="skeleton-line"></div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : exercises.length === 0 ? (
               <p className="empty-message">{t('exercises.empty')}</p>
             ) : (
               <>

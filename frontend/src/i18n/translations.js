@@ -184,6 +184,7 @@ export const translations = {
       reps: "reps",
       weight: "kg",
       seconds: "sec",
+      loading: "Loading...",
       delete: "Delete",
       confirm: "Confirm",
       success: "Success",
@@ -431,6 +432,7 @@ export const translations = {
       reps: "repetições",
       weight: "kg",
       seconds: "seg",
+      loading: "Carregando...",
       delete: "Deletar",
       confirm: "Confirmar"
     },
@@ -553,6 +555,7 @@ export const translations = {
       reps: "repetições",
       weight: "kg",
       seconds: "seg",
+      loading: "Carregando...",
       delete: "Deletar",
       confirm: "Confirmar"
     },
@@ -807,6 +810,7 @@ export const translations = {
       reps: "repetições",
       weight: "kg",
       seconds: "seg",
+      loading: "A carregar...",
       delete: "Deletar",
       confirm: "Confirmar"
     },
@@ -929,6 +933,7 @@ export const translations = {
       reps: "repetições",
       weight: "kg",
       seconds: "seg",
+      loading: "A carregar...",
       delete: "Deletar",
       confirm: "Confirmar",
       success: "Sucesso",
