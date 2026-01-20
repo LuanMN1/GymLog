@@ -128,6 +128,9 @@ axios.interceptors.response.use(
   }
 );
 
+const EXERCISES_CACHE_KEY = 'gymlog-exercises-cache-v1';
+const EXERCISES_CACHE_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 dias
+
 // Import icons
 const iconDelete = require('./assets/icons/icon-delete.png');
 const iconChart = require('./assets/icons/icon-chart.png');
@@ -388,6 +391,7 @@ function App() {
       localStorage.removeItem('gymlog-user');
       localStorage.removeItem('gymlog-isAuthenticated');
       localStorage.removeItem('gymlog-isGuest');
+      localStorage.removeItem(EXERCISES_CACHE_KEY);
     }
   };
 
@@ -395,48 +399,91 @@ function App() {
     setIsLoadingExercises(true);
     try {
       console.log('Loading data from:', api.baseURL);
-      
-      // First, try to load exercises
-      let exRes;
-      try {
-        exRes = await axios.get('/api/exercises');
-        console.log('Exercises loaded:', exRes.data);
-        
-        // If no exercises, try to initialize them
-        if (!exRes.data || exRes.data.length === 0) {
-          console.log('No exercises found, initializing...');
-          try {
-            await axios.post('/api/init-exercises');
-            // Try to load again
-            exRes = await axios.get('/api/exercises');
-            console.log('Exercises after initialization:', exRes.data);
-          } catch (initError) {
-            console.error('Failed to initialize exercises:', initError);
-          }
-        }
-      } catch (exError) {
-        console.error('Error loading exercises:', exError);
-        // Try to initialize anyway
+
+      // 1) Cache (stale-while-revalidate): se já tivermos exercícios cacheados,
+      // mostramos imediatamente e atualizamos no background.
+      if (!exercises || exercises.length === 0) {
         try {
-          await axios.post('/api/init-exercises');
-          exRes = await axios.get('/api/exercises');
-        } catch (initError) {
-          console.error('Failed to initialize exercises:', initError);
-          exRes = { data: [] };
+          const cachedRaw = localStorage.getItem(EXERCISES_CACHE_KEY);
+          if (cachedRaw) {
+            const cached = JSON.parse(cachedRaw);
+            const isValid =
+              cached &&
+              Array.isArray(cached.data) &&
+              cached.data.length > 0 &&
+              typeof cached.ts === 'number' &&
+              Date.now() - cached.ts < EXERCISES_CACHE_TTL_MS;
+            if (isValid) {
+              setExercises(cached.data);
+            }
+          }
+        } catch (e) {
+          // ignore cache parsing errors
         }
       }
       
-      // Load other data
-      const [prsRes, routinesRes, workoutsRes] = await Promise.all([
-        axios.get('/api/prs').catch(() => ({ data: [] })),
-        axios.get('/api/routines').catch(() => ({ data: [] })),
-        axios.get('/api/workouts').catch(() => ({ data: [] }))
+      // 2) Paralelizar o resto enquanto exercícios carregam.
+      const prsReq = axios.get('/api/prs').catch(() => ({ data: [] }));
+      const routinesReq = axios.get('/api/routines').catch(() => ({ data: [] }));
+      const workoutsReq = axios.get('/api/workouts').catch(() => ({ data: [] }));
+
+      const loadExercises = async () => {
+        // First, try to load exercises
+        try {
+          let exRes = await axios.get('/api/exercises');
+          console.log('Exercises loaded:', exRes.data);
+          
+          // If no exercises, try to initialize them
+          if (!exRes.data || exRes.data.length === 0) {
+            console.log('No exercises found, initializing...');
+            try {
+              await axios.post('/api/init-exercises');
+              // Try to load again
+              exRes = await axios.get('/api/exercises');
+              console.log('Exercises after initialization:', exRes.data);
+            } catch (initError) {
+              console.error('Failed to initialize exercises:', initError);
+            }
+          }
+          
+          return exRes.data || [];
+        } catch (exError) {
+          console.error('Error loading exercises:', exError);
+          // Try to initialize anyway
+          try {
+            await axios.post('/api/init-exercises');
+            const exRes = await axios.get('/api/exercises');
+            return exRes.data || [];
+          } catch (initError) {
+            console.error('Failed to initialize exercises:', initError);
+            return [];
+          }
+        }
+      };
+
+      const [exercisesData, prsRes, routinesRes, workoutsRes] = await Promise.all([
+        loadExercises(),
+        prsReq,
+        routinesReq,
+        workoutsReq
       ]);
       
-      setExercises(exRes.data || []);
+      setExercises(exercisesData);
       setPRs(prsRes.data || []);
       setRoutines(routinesRes.data || []);
       setWorkouts(workoutsRes.data || []);
+
+      // Atualiza cache (mesmo se vier vazio, guardamos só quando tiver dados)
+      if (Array.isArray(exercisesData) && exercisesData.length > 0) {
+        try {
+          localStorage.setItem(
+            EXERCISES_CACHE_KEY,
+            JSON.stringify({ ts: Date.now(), data: exercisesData })
+          );
+        } catch (e) {
+          // ignore storage errors
+        }
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       console.error('Error details:', error.response?.data || error.message);
