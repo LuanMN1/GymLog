@@ -1,84 +1,10 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import ImageCropper from './ImageCropper';
+import React from 'react';
 import LanguageSelector from './LanguageSelector';
 import './LandingPage.css';
 
-const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [avatar, setAvatar] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        const response = await axios.post('/api/auth/login', {
-          email,
-          password
-        }, {
-          withCredentials: true
-        });
-        
-        if (response.data.user) {
-          onLogin(response.data.user);
-        }
-      } else {
-        if (password !== confirmPassword) {
-          setError(t('auth.passwordsDoNotMatch'));
-          setLoading(false);
-          return;
-        }
-
-        const response = await axios.post('/api/auth/register', {
-          email,
-          password,
-          username: username.trim() || null,
-          avatar: avatar
-        }, {
-          withCredentials: true
-        });
-        
-        if (response.data.user) {
-          onLogin(response.data.user);
-        }
-      }
-    } catch (err) {
-      setError(err.response?.data?.error || t('auth.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGuestMode = async () => {
-    try {
-      await axios.post('/api/auth/guest', {}, {
-        withCredentials: true
-      });
-      onGuestMode();
-    } catch (err) {
-      setError(err.response?.data?.error || t('auth.error'));
-    }
-  };
-
-  const scrollToForm = () => {
-    setTimeout(() => {
-      const formSection = document.getElementById('login-form-section');
-      if (formSection) {
-        formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    }, 100);
+const LandingPage = ({ onNavigateToLogin, onGuestMode, t, language, changeLanguage }) => {
+  const goToLogin = (mode) => {
+    if (onNavigateToLogin) onNavigateToLogin(mode);
   };
 
   return (
@@ -91,8 +17,11 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
           </div>
           <div className="landing-header-actions">
             <LanguageSelector language={language} onChange={changeLanguage} t={t} />
-            <button onClick={scrollToForm} className="landing-signin-btn">
-              {t('landing.signIn')}
+            <button onClick={() => goToLogin('login')} className="landing-signin-btn">
+              {t('auth.login')}
+            </button>
+            <button onClick={() => goToLogin('register')} className="landing-signin-btn">
+              {t('auth.register')}
             </button>
           </div>
         </div>
@@ -111,8 +40,21 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
             <p className="landing-hero-description">
               {t('landing.hero.description')}
             </p>
-            <button onClick={scrollToForm} className="landing-cta-primary">
+            <button onClick={() => goToLogin('register')} className="landing-cta-primary">
               {t('landing.hero.cta')} →
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  await onGuestMode?.();
+                } catch (e) {
+                  alert(e?.message || t('auth.error'));
+                }
+              }}
+              className="landing-cta-secondary"
+              style={{ marginTop: 12 }}
+            >
+              {t('auth.guestMode')}
             </button>
           </div>
           <div className="landing-hero-visual">
@@ -246,168 +188,9 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
               </div>
             </div>
           </div>
-          <button onClick={scrollToForm} className="landing-cta-secondary">
+          <button onClick={() => goToLogin('register')} className="landing-cta-secondary">
             {t('landing.data.cta')}
           </button>
-        </div>
-      </section>
-
-      {/* Login/Register Form Section */}
-      <section id="login-form-section" className="landing-form-section">
-        <div className="landing-form-container">
-          <h2 className="landing-form-title">
-            {t('landing.form.title')}
-          </h2>
-          <p className="landing-form-subtitle">
-            {t('landing.form.subtitle')}
-          </p>
-
-          <div className="landing-form-tabs">
-            <button
-              className={`landing-tab-button ${isLogin ? 'active' : ''}`}
-              onClick={() => {
-                setIsLogin(true);
-                setError('');
-                setEmail('');
-                setPassword('');
-                setConfirmPassword('');
-              }}
-            >
-              {t('auth.login')}
-            </button>
-            <button
-              className={`landing-tab-button ${!isLogin ? 'active' : ''}`}
-              onClick={() => {
-                setIsLogin(false);
-                setError('');
-                setEmail('');
-                setPassword('');
-                setConfirmPassword('');
-                setUsername('');
-                setAvatar(null);
-                setAvatarPreview(null);
-              }}
-            >
-              {t('auth.register')}
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="landing-form">
-            {!isLogin && (
-              <div className="landing-form-group">
-                <label htmlFor="username">{t('auth.username')}</label>
-                <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder={t('auth.usernamePlaceholder')}
-                />
-              </div>
-            )}
-            
-            <div className="landing-form-group">
-              <label htmlFor="email">{t('auth.email')}</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder={t('auth.emailPlaceholder')}
-              />
-            </div>
-
-            <div className="landing-form-group">
-              <label htmlFor="password">{t('auth.password')}</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder={t('auth.passwordPlaceholder')}
-                minLength={isLogin ? 1 : 6}
-              />
-            </div>
-
-            {!isLogin && (
-              <>
-                <div className="landing-form-group">
-                  <label htmlFor="confirmPassword">{t('auth.confirmPassword')}</label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    placeholder={t('auth.confirmPasswordPlaceholder')}
-                    minLength={6}
-                  />
-                </div>
-                <div className="landing-form-group">
-                  <label>{t('auth.profilePicture')}</label>
-                  <div className="landing-avatar-upload-section">
-                    {avatarPreview ? (
-                      <div className="landing-avatar-preview-container">
-                        <img src={avatarPreview} alt="Preview" className="landing-avatar-preview" />
-                        <button
-                          type="button"
-                          className="landing-btn-change-avatar"
-                          onClick={() => {
-                            setAvatarPreview(null);
-                            setAvatar(null);
-                            setSelectedImage(null);
-                          }}
-                        >
-                          {t('auth.changePhoto')}
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <input
-                          type="file"
-                          id="avatar-upload"
-                          accept="image/*"
-                          style={{ display: 'none' }}
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onloadend = () => {
-                                setSelectedImage(reader.result);
-                                setShowCropper(true);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                        <label htmlFor="avatar-upload" className="landing-btn-upload-avatar">
-                          {t('auth.uploadPhoto')}
-                        </label>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </>
-            )}
-
-            {error && <div className="landing-error-message">{error}</div>}
-
-            <button type="submit" className="landing-submit-button" disabled={loading}>
-              {loading ? t('auth.loading') : (isLogin ? t('auth.login') : t('auth.register'))}
-            </button>
-          </form>
-
-          <div className="landing-guest-section">
-            <div className="landing-divider">
-              <span>{t('auth.or')}</span>
-            </div>
-            <button onClick={handleGuestMode} className="landing-guest-button">
-              {t('auth.guestMode')}
-            </button>
-            <p className="landing-guest-description">{t('auth.guestDescription')}</p>
-          </div>
         </div>
       </section>
 
@@ -420,22 +203,6 @@ const LandingPage = ({ onLogin, onGuestMode, t, language, changeLanguage }) => {
           <p className="landing-footer-text">{t('landing.footer.text')}</p>
         </div>
       </footer>
-
-      {showCropper && selectedImage && (
-        <ImageCropper
-          imageSrc={selectedImage}
-          onCropComplete={(croppedImage) => {
-            setAvatar(croppedImage);
-            setAvatarPreview(croppedImage);
-            setShowCropper(false);
-            setSelectedImage(null);
-          }}
-          onCancel={() => {
-            setShowCropper(false);
-            setSelectedImage(null);
-          }}
-        />
-      )}
     </div>
   );
 };

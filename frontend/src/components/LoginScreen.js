@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ImageCropper from './ImageCropper';
+import LanguageSelector from './LanguageSelector';
 import './LoginScreen.css';
 
-const LoginScreen = ({ onLogin, onGuestMode, t }) => {
-  const [isLogin, setIsLogin] = useState(true);
+const LoginScreen = ({ onLogin, onGuestMode, onBack, initialMode = 'login', t, language, changeLanguage }) => {
+  const [isLogin, setIsLogin] = useState(() => initialMode !== 'register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,6 +16,11 @@ const LoginScreen = ({ onLogin, onGuestMode, t }) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setIsLogin(initialMode !== 'register');
+    setError('');
+  }, [initialMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,18 +70,29 @@ const LoginScreen = ({ onLogin, onGuestMode, t }) => {
 
   const handleGuestMode = async () => {
     try {
-      await axios.post('/api/auth/guest', {}, {
-        withCredentials: true
-      });
-      onGuestMode();
+      await onGuestMode?.();
     } catch (err) {
-      setError(err.response?.data?.error || t('auth.error'));
+      setError(err?.message || err.response?.data?.error || t('auth.error'));
     }
   };
 
   return (
     <div className="login-screen">
       <div className="login-container">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={onBack || (() => {})}
+            className="tab-button"
+            style={{ width: 'auto', padding: '10px 14px' }}
+          >
+            ← {language === 'en' ? 'Back' : 'Voltar'}
+          </button>
+          {language && changeLanguage && (
+            <LanguageSelector language={language} onChange={changeLanguage} t={t} />
+          )}
+        </div>
+
         <div className="login-header">
           <img src={require('../assets/logo.png')} alt={t('app.title')} className="login-logo" />
           <h1>{t('app.title')}</h1>

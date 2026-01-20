@@ -15,6 +15,7 @@ import WorkoutSetsModal from './components/WorkoutSetsModal';
 import EditWorkoutSetsModal from './components/EditWorkoutSetsModal';
 import ConfirmModal from './components/ConfirmModal';
 import LandingPage from './components/LandingPage';
+import LoginScreen from './components/LoginScreen';
 import UserMenu from './components/UserMenu';
 import UserSettings from './components/UserSettings';
 import LanguageSelector from './components/LanguageSelector';
@@ -181,6 +182,8 @@ function App() {
   const [isGuest, setIsGuest] = useState(false);
   const [user, setUser] = useState(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [authView, setAuthView] = useState('landing'); // 'landing' | 'login'
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
   
   // Set auth state setters for axios interceptor
   useEffect(() => {
@@ -348,13 +351,20 @@ function App() {
     setUser(updatedUser);
   };
 
-  const handleGuestMode = () => {
-    setIsGuest(true);
-    setIsAuthenticated(false);
-    setUser(null);
-    localStorage.setItem('gymlog-isGuest', 'true');
-    localStorage.removeItem('gymlog-isAuthenticated');
-    localStorage.removeItem('gymlog-user');
+  const activateGuestMode = async () => {
+    try {
+      await axios.post('/api/auth/guest', {}, { withCredentials: true });
+      setIsGuest(true);
+      setIsAuthenticated(false);
+      setUser(null);
+      localStorage.setItem('gymlog-isGuest', 'true');
+      localStorage.removeItem('gymlog-isAuthenticated');
+      localStorage.removeItem('gymlog-user');
+      setAuthView('landing');
+    } catch (err) {
+      const message = err.response?.data?.error || t('auth.error');
+      throw new Error(message);
+    }
   };
 
   const handleSaveWorkoutSets = async (workoutId, exerciseId, setsData) => {
@@ -392,6 +402,8 @@ function App() {
       localStorage.removeItem('gymlog-isAuthenticated');
       localStorage.removeItem('gymlog-isGuest');
       localStorage.removeItem(EXERCISES_CACHE_KEY);
+      setAuthView('landing');
+      setAuthMode('login');
     }
   };
 
@@ -832,13 +844,28 @@ function App() {
   // Show landing page if not authenticated and not guest
   if (!isAuthenticated && !isGuest) {
     return (
-      <LandingPage 
-        onLogin={handleLogin} 
-        onGuestMode={handleGuestMode}
-        t={t}
-        language={language}
-        changeLanguage={changeLanguage}
-      />
+      authView === 'login' ? (
+        <LoginScreen
+          onLogin={handleLogin}
+          onGuestMode={activateGuestMode}
+          onBack={() => setAuthView('landing')}
+          initialMode={authMode}
+          t={t}
+          language={language}
+          changeLanguage={changeLanguage}
+        />
+      ) : (
+        <LandingPage
+          onNavigateToLogin={(mode) => {
+            setAuthMode(mode === 'register' ? 'register' : 'login');
+            setAuthView('login');
+          }}
+          onGuestMode={activateGuestMode}
+          t={t}
+          language={language}
+          changeLanguage={changeLanguage}
+        />
+      )
     );
   }
 
