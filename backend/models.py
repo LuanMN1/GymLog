@@ -29,6 +29,7 @@ class Exercise(db.Model):
     name = db.Column(db.String(100), nullable=False)
     category = db.Column(db.String(50), default='Other')
     description = db.Column(db.Text)
+    tutorial_image = db.Column(db.Text, nullable=True)
     
     def __repr__(self):
         return f'<Exercise {self.name}>'

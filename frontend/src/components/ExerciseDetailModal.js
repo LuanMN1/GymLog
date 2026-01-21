@@ -10,9 +10,30 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
   if (!exercise) return null;
 
   const exerciseInfo = exerciseData[exercise.name] || {};
+  const localizedDescription =
+    exerciseInfo?.description?.[language] ||
+    exerciseInfo?.description?.en ||
+    exercise?.description ||
+    '';
+
+  const localizedInstructions = Array.isArray(exerciseInfo?.instructions)
+    ? exerciseInfo.instructions
+    : exerciseInfo?.instructions?.[language] ||
+      exerciseInfo?.instructions?.en ||
+      [];
+
   // Try to get image, with fallback
-  const tutorialImage = exerciseInfo?.tutorialImage || exerciseInfo?.image || null;
-  const muscleGroups = exerciseInfo?.muscleGroups || [];
+  const tutorialImage =
+    exercise?.tutorial_image ||
+    exercise?.tutorialImage ||
+    exerciseInfo?.tutorialImage ||
+    exerciseInfo?.image ||
+    null;
+  const localizedMuscleGroups = Array.isArray(exerciseInfo?.muscleGroups)
+    ? exerciseInfo.muscleGroups
+    : exerciseInfo?.muscleGroups?.[language] ||
+      exerciseInfo?.muscleGroups?.en ||
+      [];
   
   // Log for debugging
   if (tutorialImage) {
@@ -48,18 +69,18 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
               <span className="info-value">{getCategoryTranslation(exercise.category)}</span>
             </div>
             
-            {exercise.description && (
+            {localizedDescription && (
               <div className="info-row full-width">
                 <span className="info-label">{t('exerciseDetail.description')}:</span>
-                <p className="info-description">{exercise.description}</p>
+                <p className="info-description">{localizedDescription}</p>
               </div>
             )}
 
-            {muscleGroups.length > 0 && (
+            {localizedMuscleGroups.length > 0 && (
               <div className="info-row full-width">
                 <span className="info-label">{t('exerciseDetail.targetMuscles')}:</span>
                 <div className="muscle-groups">
-                  {muscleGroups.map((muscle, idx) => (
+                  {localizedMuscleGroups.map((muscle, idx) => (
                     <span key={idx} className="muscle-tag">{muscle}</span>
                   ))}
                 </div>
@@ -91,11 +112,11 @@ const ExerciseDetailModal = ({ exercise, onClose }) => {
                   <p>{t('exerciseDetail.imageUnavailable')}</p>
                 </div>
               </div>
-              {exerciseInfo.instructions && (
+              {Array.isArray(localizedInstructions) && localizedInstructions.length > 0 && (
                 <div className="instructions">
                   <h4>{t('exerciseDetail.howTo')}</h4>
                   <ol>
-                    {exerciseInfo.instructions.map((instruction, idx) => (
+                    {localizedInstructions.map((instruction, idx) => (
                       <li key={idx}>{instruction}</li>
                     ))}
                   </ol>

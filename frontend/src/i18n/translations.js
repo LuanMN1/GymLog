@@ -232,6 +232,7 @@ export const translations = {
     presetRoutines: {
       title: "Preset Routines",
       empty: "No preset routines available.",
+      noResults: "No preset routines found for this filter.",
       difficulty: "Difficulty",
       duration: "Duration",
       exercises: "Exercises",
@@ -240,7 +241,19 @@ export const translations = {
       noExercisesFound: "No exercises found. Please create exercises first.",
       exerciseNotAvailable: "This exercise is not available in your exercise list.",
       addSuccess: "Routine added to My Workout successfully!",
-      addError: "Error adding routine."
+      addError: "Error adding routine.",
+      filters: {
+        all: "All",
+        specific: "Specific",
+        title: "Filter by goal",
+        goal: "Goal",
+        change: "Change goal",
+        goals: {
+          hypertrophy: "Hypertrophy",
+          strength: "Strength",
+          definition: "Definition"
+        }
+      }
     },
     auth: {
       subtitle: "Track your workouts and progress",
@@ -601,6 +614,7 @@ export const translations = {
     presetRoutines: {
       title: "Rotinas Prontas",
       empty: "Nenhuma rotina pronta disponível.",
+      noResults: "Nenhuma rotina encontrada para este filtro.",
       difficulty: "Dificuldade",
       duration: "Duração",
       exercises: "Exercícios",
@@ -609,7 +623,19 @@ export const translations = {
       noExercisesFound: "Nenhum exercício encontrado. Por favor, crie exercícios primeiro.",
       exerciseNotAvailable: "Este exercício não está disponível na sua lista de exercícios.",
       addSuccess: "Rotina adicionada à Minha Rotina com sucesso!",
-      addError: "Erro ao adicionar rotina."
+      addError: "Erro ao adicionar rotina.",
+      filters: {
+        all: "Todos",
+        specific: "Específico",
+        title: "Filtrar por objetivo",
+        goal: "Objetivo",
+        change: "Alterar objetivo",
+        goals: {
+          hypertrophy: "Hipertrofia",
+          strength: "Força",
+          definition: "Definição"
+        }
+      }
     },
     exerciseDetail: {
       category: "Categoria",
@@ -981,6 +1007,7 @@ export const translations = {
     presetRoutines: {
       title: "Rotinas Prontas",
       empty: "Ainda não há rotinas prontas disponíveis.",
+      noResults: "Não há rotinas para este filtro.",
       difficulty: "Dificuldade",
       duration: "Duração",
       exercises: "Exercícios",
@@ -989,7 +1016,19 @@ export const translations = {
       noExercisesFound: "Nenhum exercício encontrado. Por favor, crie exercícios primeiro.",
       exerciseNotAvailable: "Este exercício não está disponível na sua lista de exercícios.",
       addSuccess: "Rotina adicionada à Minha Rotina com sucesso!",
-      addError: "Erro ao adicionar rotina."
+      addError: "Erro ao adicionar rotina.",
+      filters: {
+        all: "Todos",
+        specific: "Específico",
+        title: "Filtrar por objetivo",
+        goal: "Objetivo",
+        change: "Alterar objetivo",
+        goals: {
+          hypertrophy: "Hipertrofia",
+          strength: "Força",
+          definition: "Definição"
+        }
+      }
     },
     exerciseDetail: {
       category: "Categoria",

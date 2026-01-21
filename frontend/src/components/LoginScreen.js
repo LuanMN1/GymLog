@@ -94,7 +94,6 @@ const LoginScreen = ({ onLogin, onGuestMode, onBack, initialMode = 'login', t, l
 
         <div className="login-header">
           <img src={require('../assets/logo.png')} alt={t('app.title')} className="login-logo" />
-          <h1>{t('app.title')}</h1>
           <p className="login-subtitle">{t('auth.subtitle')}</p>
         </div>
 

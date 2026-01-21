@@ -349,6 +349,68 @@
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
 }
 
+.preset-routines-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.goal-pill {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  background: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.goal-pill:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.7);
+  background: rgba(59, 130, 246, 0.18);
+  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.22);
+}
+
+.preset-goal-modal {
+  max-width: 520px;
+  width: calc(100% - 2rem);
+}
+
+.preset-goal-options {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem 0.75rem;
+}
+
+.goal-option {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 2px solid rgba(59, 130, 246, 0.35);
+  background: rgba(0, 0, 0, 0.15);
+  color: #e5e7eb;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.goal-option:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 165, 250, 0.8);
+  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.22);
+}
+
+.goal-option.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28) 0%, rgba(37, 99, 235, 0.22) 100%);
+  border-color: rgba(96, 165, 250, 0.9);
+  color: #ffffff;
+}
+
 .pagination {
   display: flex;
   justify-content: center;
@@ -754,6 +816,15 @@
   box-shadow: 0 8px 16px rgba(59, 130, 246, 0.6);
   border: 2px solid #60a5fa;
   background: linear-gradient(135deg, #2a2a2a 0%, #1e3a8a 100%);
+}
+
+.exercise-card .exercise-card-description {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 
 .card:hover {

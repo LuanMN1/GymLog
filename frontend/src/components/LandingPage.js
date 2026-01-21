@@ -43,19 +43,6 @@ const LandingPage = ({ onNavigateToLogin, onGuestMode, t, language, changeLangua
             <button onClick={() => goToLogin('register')} className="landing-cta-primary">
               {t('landing.hero.cta')} →
             </button>
-            <button
-              onClick={async () => {
-                try {
-                  await onGuestMode?.();
-                } catch (e) {
-                  alert(e?.message || t('auth.error'));
-                }
-              }}
-              className="landing-cta-secondary"
-              style={{ marginTop: 12 }}
-            >
-              {t('auth.guestMode')}
-            </button>
           </div>
           <div className="landing-hero-visual">
             <div className="landing-stats-circle">

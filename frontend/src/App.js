@@ -4,6 +4,7 @@ import axios from 'axios';
 import { api } from './config';
 import { translations } from './i18n/translations';
 import { getTranslatedExerciseName } from './i18n/exerciseTranslations';
+import { exerciseData } from './i18n/exerciseData';
 import { isTimeBasedExercise } from './utils/exerciseTypes';
 import PRForm from './components/PRForm';
 import RoutineForm from './components/RoutineForm';
@@ -218,6 +219,9 @@ function App() {
   const [expandedRoutines, setExpandedRoutines] = useState(new Set());
   const [exerciseFilter, setExerciseFilter] = useState('all');
   const [historyFilter, setHistoryFilter] = useState('all');
+  const [presetRoutinesFilter, setPresetRoutinesFilter] = useState('all'); // 'all' | 'specific'
+  const [presetRoutinesGoal, setPresetRoutinesGoal] = useState(null); // 'hypertrophy' | 'strength' | 'definition' | null
+  const [showPresetGoalModal, setShowPresetGoalModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
@@ -597,6 +601,18 @@ function App() {
     return categoryMap[category] || category;
   };
 
+  const getExerciseCardDescription = (exercise) => {
+    const exerciseInfo = exerciseData?.[exercise?.name];
+    const localized =
+      exerciseInfo?.cardDescription?.[language] ||
+      exerciseInfo?.cardDescription?.en ||
+      exerciseInfo?.description?.[language] ||
+      exerciseInfo?.description?.en ||
+      '';
+
+    return localized || exercise?.description || '';
+  };
+
   // Função para traduzir observações de exercícios
   const getTranslatedExerciseNote = (note, exerciseName, presetId = null) => {
     if (!note || note.trim() === '') return note;
@@ -739,6 +755,13 @@ function App() {
   const handleHistoryFilterChange = (filter) => {
     setHistoryFilter(filter);
     setHistoryPage(1); // Reset to first page when filter changes
+  };
+
+  const getFilteredPresetRoutines = () => {
+    if (presetRoutinesFilter !== 'specific' || !presetRoutinesGoal) {
+      return presetRoutines;
+    }
+    return presetRoutines.filter(r => r.goal === presetRoutinesGoal);
   };
 
   const getHistoryStats = () => {
@@ -1047,7 +1070,9 @@ function App() {
                         >
                           <h3>{getTranslatedExerciseName(ex.name, language)}</h3>
                           <p className="categoria">{t('exercises.category')}: {getCategoryTranslation(ex.category)}</p>
-                          {ex.description && <p>{ex.description}</p>}
+                          {getExerciseCardDescription(ex) && (
+                            <p className="exercise-card-description">{getExerciseCardDescription(ex)}</p>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1439,11 +1464,51 @@ function App() {
             <div className="section-header">
               <h2>{t('presetRoutines.title')}</h2>
             </div>
-            {presetRoutines.length === 0 ? (
-              <p className="empty-message">{t('presetRoutines.empty')}</p>
+
+            <div className="filters">
+              <div className="preset-routines-controls">
+                <button
+                  type="button"
+                  className={`filter-btn ${presetRoutinesFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPresetRoutinesFilter('all');
+                    setPresetRoutinesGoal(null);
+                  }}
+                >
+                  {t('presetRoutines.filters.all')}
+                </button>
+
+                <button
+                  type="button"
+                  className={`filter-btn ${presetRoutinesFilter === 'specific' ? 'active' : ''}`}
+                  onClick={() => {
+                    setPresetRoutinesFilter('specific');
+                    setShowPresetGoalModal(true);
+                  }}
+                >
+                  {t('presetRoutines.filters.specific')}
+                </button>
+
+                {presetRoutinesFilter === 'specific' && presetRoutinesGoal && (
+                  <button
+                    type="button"
+                    className="goal-pill"
+                    onClick={() => setShowPresetGoalModal(true)}
+                    title={t('presetRoutines.filters.change')}
+                  >
+                    {t('presetRoutines.filters.goal')}: {t(`presetRoutines.filters.goals.${presetRoutinesGoal}`)}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {getFilteredPresetRoutines().length === 0 ? (
+              <p className="empty-message">
+                {presetRoutines.length === 0 ? t('presetRoutines.empty') : t('presetRoutines.noResults')}
+              </p>
             ) : (
               <div className="grid">
-                {presetRoutines.map(routine => (
+                {getFilteredPresetRoutines().map(routine => (
                   <div 
                     key={routine.id} 
                     className="card preset-routine-card"
@@ -1539,6 +1604,68 @@ function App() {
           onClose={() => setSelectedPresetRoutine(null)}
           onAdd={handleAddPresetRoutine}
         />
+      )}
+
+      {showPresetGoalModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowPresetGoalModal(false)}
+        >
+          <div
+            className="modal-content preset-goal-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2>{t('presetRoutines.filters.title')}</h2>
+              <button className="close-btn" onClick={() => setShowPresetGoalModal(false)}>×</button>
+            </div>
+
+            <div className="preset-goal-options">
+              <button
+                type="button"
+                className={`goal-option ${presetRoutinesGoal === 'hypertrophy' ? 'active' : ''}`}
+                onClick={() => {
+                  setPresetRoutinesGoal('hypertrophy');
+                  setShowPresetGoalModal(false);
+                }}
+              >
+                {t('presetRoutines.filters.goals.hypertrophy')}
+              </button>
+
+              <button
+                type="button"
+                className={`goal-option ${presetRoutinesGoal === 'strength' ? 'active' : ''}`}
+                onClick={() => {
+                  setPresetRoutinesGoal('strength');
+                  setShowPresetGoalModal(false);
+                }}
+              >
+                {t('presetRoutines.filters.goals.strength')}
+              </button>
+
+              <button
+                type="button"
+                className={`goal-option ${presetRoutinesGoal === 'definition' ? 'active' : ''}`}
+                onClick={() => {
+                  setPresetRoutinesGoal('definition');
+                  setShowPresetGoalModal(false);
+                }}
+              >
+                {t('presetRoutines.filters.goals.definition')}
+              </button>
+            </div>
+
+            <div className="form-actions">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setShowPresetGoalModal(false)}
+              >
+                {t('forms.cancel')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {showSuccessModal && (
