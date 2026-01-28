@@ -3,7 +3,6 @@ Script to populate database with default challenges and achievements
 Run: python init_gamification.py
 """
 
-from app import app
 from models import db, Challenge, Achievement
 from sqlalchemy import inspect, text
 
@@ -495,6 +494,7 @@ def init_gamification_data():
 
 def init_gamification():
     """Wrapper function that creates app context (for standalone script execution)"""
+    from app import app
     with app.app_context():
         init_gamification_data()
 

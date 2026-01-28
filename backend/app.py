@@ -156,25 +156,25 @@ def initialize_database():
                 db.session.rollback()
             
             # Initialize gamification (challenges and achievements) if they don't exist
-            # Note: This will only initialize if tables are empty, similar to exercises
             try:
                 from models import Challenge, Achievement
-                challenge_count = Challenge.query.count()
-                achievement_count = Achievement.query.count()
-                
+                try:
+                    challenge_count = Challenge.query.count()
+                except Exception:
+                    challenge_count = 0
                 if challenge_count == 0:
-                    print("No challenges found. Run 'python init_gamification.py' to initialize challenges and achievements.")
-                    print("(This is a one-time setup that needs to be done manually)")
+                    print("No challenges found. Running init_gamification_data...")
+                    try:
+                        from init_gamification import init_gamification_data
+                        init_gamification_data()
+                        print("Challenges and achievements initialized.")
+                    except Exception as ge:
+                        print(f"Could not run init_gamification: {ge}")
+                        import traceback
+                        traceback.print_exc()
                 else:
-                    print(f"Challenges already exist ({challenge_count} challenges)")
-                
-                if achievement_count == 0:
-                    if challenge_count == 0:
-                        print("No achievements found. Run 'python init_gamification.py' to initialize.")
-                    else:
-                        print("No achievements found but challenges exist. Run 'python init_gamification.py' to initialize achievements.")
-                else:
-                    print(f"Achievements already exist ({achievement_count} achievements)")
+                    achievement_count = Achievement.query.count()
+                    print(f"Challenges already exist ({challenge_count}), achievements ({achievement_count})")
                 # Desativar desafios que não incentivam descanso (6/7 dias na semana, 30 dias no mês)
                 for name in ('Seis Dias na Semana', 'Semana Completa', 'Mês Máximo'):
                     c = Challenge.query.filter_by(name=name).first()
@@ -182,8 +182,7 @@ def initialize_database():
                         c.is_active = False
                 db.session.commit()
             except Exception as e:
-                # Se as tabelas não existirem ainda, não é um erro crítico
-                print(f"Note: Gamification tables may not exist yet: {e}")
+                print(f"Note: Gamification init: {e}")
                 db.session.rollback()
     except Exception as e:
         print(f"Error initializing database: {e}")
@@ -438,6 +437,7 @@ def health_check():
 # Initialize exercises route (can be called manually if needed)
 @app.route('/api/init-exercises', methods=['POST'])
 def init_exercises():
+    ensure_database_initialized()
     if Exercise.query.count() > 0:
         return jsonify({'message': 'Exercises already exist', 'count': Exercise.query.count()}), 200
     

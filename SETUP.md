@@ -105,6 +105,19 @@ The application supports three languages:
 
 The language can be changed using the language switcher in the application header. The selected language is saved in localStorage.
 
+## Deploy no Vercel (frontend e backend em projetos separados)
+
+1. **Backend**: faça deploy da pasta `backend/` como projeto Vercel (ou Railway/Render). Anote a URL (ex: `https://gymlog-api.vercel.app`).
+
+2. **Frontend**: no projeto Vercel do frontend, em **Settings → Environment Variables**:
+   - Nome: `REACT_APP_API_URL`
+   - Valor: a URL do backend (ex: `https://gymlog-api.vercel.app`)
+   - Importante: faça um novo **Redeploy** após salvar a variável para que o build use o valor.
+
+3. **Base de dados**: use PostgreSQL (ex: Supabase) em produção. Defina `DATABASE_URL` nas variáveis do projeto do **backend**.
+
+4. **Exercícios e desafios**: na primeira requisição ao backend, exercícios e desafios são criados automaticamente se a base estiver vazia.
+
 ## Troubleshooting
 
 ### Python not found
