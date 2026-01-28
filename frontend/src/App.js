@@ -20,6 +20,9 @@ import LoginScreen from './components/LoginScreen';
 import UserMenu from './components/UserMenu';
 import UserSettings from './components/UserSettings';
 import LanguageSelector from './components/LanguageSelector';
+import GamificationProgress from './components/GamificationProgress';
+import Challenges from './components/Challenges';
+import Achievements from './components/Achievements';
 import { presetRoutines } from './data/presetRoutines';
 import {
   LineChart,
@@ -948,6 +951,13 @@ function App() {
         >
           {t('nav.history')}
         </button>
+        <div className="tab-separator"></div>
+        <button 
+          className={activeTab === 'gamification' ? 'active' : ''}
+          onClick={() => setActiveTab('gamification')}
+        >
+          🎮 {t('nav.gamification')}
+        </button>
       </nav>
 
       <main className="content">
@@ -1456,6 +1466,22 @@ function App() {
                 )}
               </>
             )}
+          </div>
+        )}
+
+        {activeTab === 'gamification' && (user && !isGuest) && (
+          <div className="section">
+            <GamificationProgress user={user} t={t} />
+            <Challenges user={user} t={t} language={language} />
+            <Achievements user={user} t={t} language={language} />
+          </div>
+        )}
+
+        {activeTab === 'gamification' && (!user || isGuest) && (
+          <div className="section">
+            <div className="empty-state" style={{ textAlign: 'center', padding: '3rem', color: 'rgba(255, 255, 255, 0.7)' }}>
+              <p>{t('gamification.loginRequired')}</p>
+            </div>
           </div>
         )}
 

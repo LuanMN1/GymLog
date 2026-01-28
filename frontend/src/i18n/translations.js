@@ -10,7 +10,8 @@ export const translations = {
       prs: "Personal Records",
       routines: "My Workout",
       history: "History",
-      presetRoutines: "Preset Routines"
+      presetRoutines: "Preset Routines",
+      gamification: "Challenges & Achievements"
     },
     exercises: {
       title: "Registered Exercises",
@@ -385,6 +386,66 @@ export const translations = {
       deleteAccountTitle: "Delete Account",
       deleteAccountMessage: "Are you sure you want to delete your account? This action cannot be undone. All your data (workouts, PRs, routines) will be permanently deleted.",
       deleteAccountConfirm: "Yes, Delete Account"
+    },
+    gamification: {
+      progress: {
+        title: "Your Progress",
+        level: "Level",
+        xp: "Experience Points",
+        nextLevel: "Next Level",
+        currentStreak: "Current Streak",
+        longestStreak: "Longest Streak",
+        totalWorkouts: "Total Workouts",
+        totalPoints: "Total Points",
+        days: "days"
+      },
+      challenges: {
+        title: "Challenges",
+        available: "Available",
+        inProgress: "In Progress",
+        history: "History",
+        noAvailable: "No challenges available",
+        noActive: "No active challenges",
+        noCompleted: "No completed challenges",
+        start: "Start Challenge",
+        completed: "Completed",
+        points: "Points",
+        startError: "Error starting challenge",
+        difficulty: {
+          easy: "Easy",
+          medium: "Medium",
+          hard: "Hard",
+          expert: "Expert"
+        },
+        period: {
+          daily: "Daily",
+          weekly: "Weekly",
+          monthly: "Monthly",
+          cumulative: "Cumulative Challenges"
+        },
+        filterByDifficulty: "Filter by Difficulty",
+        filterByPeriod: "Filter by Period",
+        filterAll: "All",
+        abandonTitle: "Give up on challenge?",
+        abandonMessage: "Your progress will be lost and the challenge will return to Available. Are you sure?",
+        abandonConfirm: "Yes, give up",
+        abandonError: "Error abandoning challenge"
+      },
+      achievements: {
+        title: "Achievements",
+        unlocked: "Unlocked",
+        all: "All",
+        locked: "Locked",
+        noAchievements: "No achievements found",
+        points: "Points",
+        rarity: {
+          common: "Common",
+          rare: "Rare",
+          epic: "Epic",
+          legendary: "Legendary"
+        }
+      },
+      loginRequired: "Please log in to view your gamification progress, challenges, and achievements."
     }
   },
   'pt-BR': {
@@ -398,7 +459,8 @@ export const translations = {
       prs: "Recordes Pessoais",
       routines: "Minha Rotina",
       history: "Histórico",
-      presetRoutines: "Rotinas Prontas"
+      presetRoutines: "Rotinas Prontas",
+      gamification: "Desafios e Conquistas"
     },
     exercises: {
       title: "Exercícios Cadastrados",
@@ -776,6 +838,66 @@ export const translations = {
       deleteAccountTitle: "Excluir Conta",
       deleteAccountMessage: "Tem certeza que deseja excluir sua conta? Esta ação não pode ser desfeita. Todos os seus dados (treinos, PRs, rotinas) serão permanentemente excluídos.",
       deleteAccountConfirm: "Sim, Excluir Conta"
+    },
+    gamification: {
+      progress: {
+        title: "Seu Progresso",
+        level: "Nível",
+        xp: "Pontos de Experiência",
+        nextLevel: "Próximo Nível",
+        currentStreak: "Sequência Atual",
+        longestStreak: "Maior Sequência",
+        totalWorkouts: "Total de Treinos",
+        totalPoints: "Pontos Totais",
+        days: "dias"
+      },
+      challenges: {
+        title: "Desafios",
+        available: "Disponíveis",
+        inProgress: "Em Progresso",
+        history: "Histórico",
+        noAvailable: "Nenhum desafio disponível",
+        noActive: "Nenhum desafio ativo",
+        noCompleted: "Nenhum desafio completado",
+        start: "Iniciar Desafio",
+        completed: "Concluído",
+        points: "Pontos",
+        startError: "Erro ao iniciar desafio",
+        difficulty: {
+          easy: "Fácil",
+          medium: "Médio",
+          hard: "Difícil",
+          expert: "Expert"
+        },
+        period: {
+          daily: "Diário",
+          weekly: "Semanal",
+          monthly: "Mensal",
+          cumulative: "Desafios Cumulativos"
+        },
+        filterByDifficulty: "Filtrar por Dificuldade",
+        filterByPeriod: "Filtrar por Período",
+        filterAll: "Geral",
+        abandonTitle: "Desistir do desafio?",
+        abandonMessage: "Seu progresso será perdido e o desafio voltará para Disponíveis. Tem certeza?",
+        abandonConfirm: "Sim, desistir",
+        abandonError: "Erro ao desistir do desafio"
+      },
+      achievements: {
+        title: "Conquistas",
+        unlocked: "Desbloqueadas",
+        all: "Todas",
+        locked: "Bloqueadas",
+        noAchievements: "Nenhuma conquista encontrada",
+        points: "Pontos",
+        rarity: {
+          common: "Comum",
+          rare: "Raro",
+          epic: "Épico",
+          legendary: "Lendário"
+        }
+      },
+      loginRequired: "Por favor, faça login para ver seu progresso, desafios e conquistas."
     }
   },
   'pt-PT': {
@@ -789,7 +911,8 @@ export const translations = {
       prs: "Recordes Pessoais",
       routines: "Minha Rotina",
       history: "Histórico",
-      presetRoutines: "Rotinas Prontas"
+      presetRoutines: "Rotinas Prontas",
+      gamification: "Desafios e Conquistas"
     },
     exercises: {
       title: "Exercícios Registados",
@@ -1169,6 +1292,66 @@ export const translations = {
       deleteAccountTitle: "Eliminar Conta",
       deleteAccountMessage: "Tem a certeza que deseja eliminar a sua conta? Esta ação não pode ser desfeita. Todos os seus dados (treinos, PRs, rotinas) serão permanentemente eliminados.",
       deleteAccountConfirm: "Sim, Eliminar Conta"
+    },
+    gamification: {
+      progress: {
+        title: "O Seu Progresso",
+        level: "Nível",
+        xp: "Pontos de Experiência",
+        nextLevel: "Próximo Nível",
+        currentStreak: "Sequência Atual",
+        longestStreak: "Maior Sequência",
+        totalWorkouts: "Total de Treinos",
+        totalPoints: "Pontos Totais",
+        days: "dias"
+      },
+      challenges: {
+        title: "Desafios",
+        available: "Disponíveis",
+        inProgress: "Em Progresso",
+        history: "Histórico",
+        noAvailable: "Nenhum desafio disponível",
+        noActive: "Nenhum desafio ativo",
+        noCompleted: "Nenhum desafio completado",
+        start: "Iniciar Desafio",
+        completed: "Concluído",
+        points: "Pontos",
+        startError: "Erro ao iniciar desafio",
+        difficulty: {
+          easy: "Fácil",
+          medium: "Médio",
+          hard: "Difícil",
+          expert: "Perito"
+        },
+        period: {
+          daily: "Diário",
+          weekly: "Semanal",
+          monthly: "Mensal",
+          cumulative: "Desafios Cumulativos"
+        },
+        filterByDifficulty: "Filtrar por Dificuldade",
+        filterByPeriod: "Filtrar por Período",
+        filterAll: "Todos",
+        abandonTitle: "Desistir do desafio?",
+        abandonMessage: "O seu progresso será perdido e o desafio voltará para Disponíveis. Tem a certeza?",
+        abandonConfirm: "Sim, desistir",
+        abandonError: "Erro ao desistir do desafio"
+      },
+      achievements: {
+        title: "Conquistas",
+        unlocked: "Desbloqueadas",
+        all: "Todas",
+        locked: "Bloqueadas",
+        noAchievements: "Nenhuma conquista encontrada",
+        points: "Pontos",
+        rarity: {
+          common: "Comum",
+          rare: "Raro",
+          epic: "Épico",
+          legendary: "Lendário"
+        }
+      },
+      loginRequired: "Por favor, faça login para ver o seu progresso, desafios e conquistas."
     }
   }
 };

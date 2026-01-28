@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, request, session
 from flask_cors import CORS
 from functools import wraps
-from models import db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise, User
-from datetime import datetime
+from models import (db, Exercise, Workout, WorkoutExercise, WorkoutSet, PR, Routine, RoutineExercise, User,
+                    UserProgress, Challenge, UserChallenge, ChallengeAbandon, Achievement, UserAchievement)
+from datetime import datetime, timedelta
 import os
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from sqlalchemy import inspect, text
@@ -95,15 +96,32 @@ def initialize_database():
             # Lightweight migration: add new columns if missing
             try:
                 inspector = inspect(db.engine)
-                cols = {c["name"] for c in inspector.get_columns("exercises")}
-                if "tutorial_image" not in cols:
-                    # Works for SQLite and PostgreSQL (Supabase)
-                    db.session.execute(text("ALTER TABLE exercises ADD COLUMN tutorial_image TEXT"))
-                    db.session.commit()
-                    print("Added missing column: exercises.tutorial_image")
+                
+                # Migrate exercises table
+                try:
+                    cols = {c["name"] for c in inspector.get_columns("exercises")}
+                    if "tutorial_image" not in cols:
+                        db.session.execute(text("ALTER TABLE exercises ADD COLUMN tutorial_image TEXT"))
+                        db.session.commit()
+                        print("Added missing column: exercises.tutorial_image")
+                except Exception as e:
+                    print(f"Warning: could not ensure exercises.tutorial_image column exists: {e}")
+                    db.session.rollback()
+                
+                # Migrate challenges table - add period_type column
+                try:
+                    if inspector.has_table("challenges"):
+                        cols = {c["name"] for c in inspector.get_columns("challenges")}
+                        if "period_type" not in cols:
+                            db.session.execute(text("ALTER TABLE challenges ADD COLUMN period_type VARCHAR(20) DEFAULT 'cumulative'"))
+                            db.session.commit()
+                            print("Added missing column: challenges.period_type")
+                except Exception as e:
+                    print(f"Warning: could not ensure challenges.period_type column exists: {e}")
+                    db.session.rollback()
             except Exception as e:
                 # Don't fail startup if migration cannot run (e.g., permissions)
-                print(f"Warning: could not ensure exercises.tutorial_image column exists: {e}")
+                print(f"Warning: could not run migrations: {e}")
                 db.session.rollback()
             
             # Initialize exercises if database is empty
@@ -135,6 +153,37 @@ def initialize_database():
                         db.session.rollback()
             except Exception as e:
                 print(f"Error initializing exercises: {e}")
+                db.session.rollback()
+            
+            # Initialize gamification (challenges and achievements) if they don't exist
+            # Note: This will only initialize if tables are empty, similar to exercises
+            try:
+                from models import Challenge, Achievement
+                challenge_count = Challenge.query.count()
+                achievement_count = Achievement.query.count()
+                
+                if challenge_count == 0:
+                    print("No challenges found. Run 'python init_gamification.py' to initialize challenges and achievements.")
+                    print("(This is a one-time setup that needs to be done manually)")
+                else:
+                    print(f"Challenges already exist ({challenge_count} challenges)")
+                
+                if achievement_count == 0:
+                    if challenge_count == 0:
+                        print("No achievements found. Run 'python init_gamification.py' to initialize.")
+                    else:
+                        print("No achievements found but challenges exist. Run 'python init_gamification.py' to initialize achievements.")
+                else:
+                    print(f"Achievements already exist ({achievement_count} achievements)")
+                # Desativar desafios que não incentivam descanso (6/7 dias na semana, 30 dias no mês)
+                for name in ('Seis Dias na Semana', 'Semana Completa', 'Mês Máximo'):
+                    c = Challenge.query.filter_by(name=name).first()
+                    if c and c.is_active:
+                        c.is_active = False
+                db.session.commit()
+            except Exception as e:
+                # Se as tabelas não existirem ainda, não é um erro crítico
+                print(f"Note: Gamification tables may not exist yet: {e}")
                 db.session.rollback()
     except Exception as e:
         print(f"Error initializing database: {e}")
@@ -543,7 +592,31 @@ def create_workout():
                 db.session.add(workout_set)
     
     db.session.commit()
-    return jsonify({'id': workout.id, 'message': 'Workout created successfully'}), 201
+    
+    # Atualizar gamificação
+    gamification_result = None
+    if user:
+        try:
+            progress, completed_challenges, unlocked_achievements = update_gamification_on_workout(user.id, data)
+            gamification_result = {
+                'progress': {
+                    'xp': progress.xp,
+                    'level': progress.level,
+                    'current_streak': progress.current_streak
+                },
+                'completed_challenges': completed_challenges,
+                'unlocked_achievements': unlocked_achievements
+            }
+        except Exception as e:
+            print(f"Error updating gamification: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    response = {'id': workout.id, 'message': 'Workout created successfully'}
+    if gamification_result:
+        response['gamification'] = gamification_result
+    
+    return jsonify(response), 201
 
 @app.route('/api/workouts/<int:workout_id>', methods=['DELETE'])
 @login_required
@@ -792,6 +865,618 @@ def delete_routine(routine_id):
     db.session.delete(routine)
     db.session.commit()
     return jsonify({'message': 'Routine deleted successfully'})
+
+# ========== GAMIFICAÇÃO ==========
+
+def get_or_create_user_progress(user_id):
+    """Obtém ou cria o progresso do usuário (XP e pontos começam em 0)"""
+    progress = UserProgress.query.filter_by(user_id=user_id).first()
+    if not progress:
+        progress = UserProgress(user_id=user_id, xp=0, total_points=0, level=1)
+        db.session.add(progress)
+        db.session.commit()
+    return progress
+
+def calculate_xp_for_level(level):
+    """Calcula XP necessário para um nível"""
+    # Fórmula: 100 * level^1.5 (exponencial)
+    return int(100 * (level ** 1.5))
+
+def add_xp(user_id, xp_amount):
+    """Adiciona XP ao usuário e atualiza nível se necessário"""
+    progress = get_or_create_user_progress(user_id)
+    progress.xp += xp_amount
+    progress.total_points += xp_amount
+    
+    # Verificar se subiu de nível
+    while True:
+        xp_needed = calculate_xp_for_level(progress.level + 1)
+        if progress.xp >= xp_needed:
+            progress.level += 1
+        else:
+            break
+    
+    db.session.commit()
+    return progress
+
+def update_streak(user_id, workout_date):
+    """Atualiza a sequência de treinos do usuário"""
+    progress = get_or_create_user_progress(user_id)
+    workout_date_only = workout_date.date() if hasattr(workout_date, 'date') else workout_date
+    
+    if progress.last_workout_date:
+        last_date = progress.last_workout_date.date() if hasattr(progress.last_workout_date, 'date') else progress.last_workout_date
+        from datetime import timedelta
+        
+        # Se treinou hoje ou ontem, mantém/continua a sequência
+        if workout_date_only == last_date:
+            # Mesmo dia, não atualiza streak
+            return progress
+        elif workout_date_only == last_date + timedelta(days=1):
+            # Dia seguinte, continua a sequência
+            progress.current_streak += 1
+        else:
+            # Quebrou a sequência
+            if progress.current_streak > progress.longest_streak:
+                progress.longest_streak = progress.current_streak
+            progress.current_streak = 1
+    else:
+        # Primeiro treino
+        progress.current_streak = 1
+    
+    progress.last_workout_date = workout_date
+    progress.total_workouts += 1
+    db.session.commit()
+    return progress
+
+def check_challenges(user_id, workout_data=None):
+    """Verifica e atualiza desafios do usuário"""
+    from datetime import datetime, timedelta
+    
+    user_challenges = UserChallenge.query.filter_by(
+        user_id=user_id,
+        is_completed=False
+    ).all()
+    
+    progress = get_or_create_user_progress(user_id)
+    completed_challenges = []
+    
+    # Para desafios periódicos, precisamos verificar o período atual
+    today = datetime.utcnow().date()
+    week_start = today - timedelta(days=today.weekday())  # Segunda-feira da semana
+    month_start = today.replace(day=1)  # Primeiro dia do mês
+    
+    for user_challenge in user_challenges:
+        challenge = user_challenge.challenge
+        updated = False
+        current_progress = 0
+        
+        # Verificar se o desafio precisa resetar (períodos diários, semanais, mensais)
+        if challenge.period_type in ['daily', 'weekly', 'monthly']:
+            # Verificar se o período mudou desde que o desafio foi iniciado ou completado
+            period_start = None
+            if challenge.period_type == 'daily':
+                period_start = today
+            elif challenge.period_type == 'weekly':
+                period_start = week_start
+            elif challenge.period_type == 'monthly':
+                period_start = month_start
+            
+            # Se o período mudou, resetar o progresso e reiniciar o desafio
+            if user_challenge.started_at:
+                started_date = user_challenge.started_at.date() if hasattr(user_challenge.started_at, 'date') else user_challenge.started_at
+                should_reset = False
+                
+                if challenge.period_type == 'daily' and started_date < today:
+                    should_reset = True
+                elif challenge.period_type == 'weekly':
+                    started_week = started_date - timedelta(days=started_date.weekday())
+                    if started_week < week_start:
+                        should_reset = True
+                elif challenge.period_type == 'monthly':
+                    started_month = started_date.replace(day=1)
+                    if started_month < month_start:
+                        should_reset = True
+                
+                if should_reset:
+                    # Resetar desafio periódico para novo período
+                    user_challenge.progress = 0
+                    user_challenge.is_completed = False
+                    user_challenge.completed_at = None
+                    user_challenge.started_at = datetime.utcnow()
+        
+        if challenge.challenge_type == 'workout_count':
+            if challenge.period_type == 'cumulative':
+                # Desafio cumulativo: usa total de treinos
+                current_progress = progress.total_workouts
+            elif challenge.period_type == 'daily':
+                # Contar treinos de hoje
+                today_start = datetime.combine(today, datetime.min.time())
+                today_end = datetime.combine(today, datetime.max.time())
+                workout_count = Workout.query.filter_by(user_id=user_id).filter(
+                    Workout.date >= today_start,
+                    Workout.date <= today_end
+                ).count()
+                current_progress = workout_count
+            elif challenge.period_type == 'weekly':
+                # Contar dias únicos da semana (não número de treinos)
+                week_start_dt = datetime.combine(week_start, datetime.min.time())
+                week_end_dt = datetime.combine(week_start + timedelta(days=6), datetime.max.time())
+                # Buscar todos os treinos da semana e contar dias únicos
+                workouts = Workout.query.filter_by(user_id=user_id).filter(
+                    Workout.date >= week_start_dt,
+                    Workout.date <= week_end_dt
+                ).all()
+                # Extrair datas únicas
+                unique_dates = set()
+                for workout in workouts:
+                    workout_date = workout.date.date() if hasattr(workout.date, 'date') else workout.date
+                    unique_dates.add(workout_date)
+                current_progress = len(unique_dates)
+            elif challenge.period_type == 'monthly':
+                # Contar dias únicos do mês (não número de treinos)
+                month_start_dt = datetime.combine(month_start, datetime.min.time())
+                # Calcular último dia do mês
+                if month_start.month == 12:
+                    next_month = month_start.replace(year=month_start.year + 1, month=1, day=1)
+                else:
+                    next_month = month_start.replace(month=month_start.month + 1, day=1)
+                month_end_date = next_month - timedelta(days=1)
+                month_end_dt = datetime.combine(month_end_date, datetime.max.time())
+                # Buscar todos os treinos do mês e contar dias únicos
+                workouts = Workout.query.filter_by(user_id=user_id).filter(
+                    Workout.date >= month_start_dt,
+                    Workout.date <= month_end_dt
+                ).all()
+                # Extrair datas únicas
+                unique_dates = set()
+                for workout in workouts:
+                    workout_date = workout.date.date() if hasattr(workout.date, 'date') else workout.date
+                    unique_dates.add(workout_date)
+                current_progress = len(unique_dates)
+            
+            user_challenge.progress = current_progress
+            updated = True
+        elif challenge.challenge_type == 'streak':
+            user_challenge.progress = progress.current_streak
+            updated = True
+        elif challenge.challenge_type == 'pr' and workout_data:
+            # Verificar se bateu PR (será verificado quando PR for criado)
+            pass
+        elif challenge.challenge_type == 'exercise_specific' and workout_data:
+            # Contar exercícios específicos no treino
+            exercise_id = challenge.exercise_id
+            if exercise_id:
+                count = sum(1 for ex in workout_data.get('exercises', []) 
+                          if ex.get('exercise_id') == exercise_id)
+                user_challenge.progress += count
+                updated = True
+        
+        if updated and user_challenge.progress >= user_challenge.target_value:
+            user_challenge.is_completed = True
+            user_challenge.completed_at = datetime.utcnow()
+            add_xp(user_id, challenge.xp_reward)
+            progress.total_points += challenge.points_reward
+            completed_challenges.append({
+                'id': challenge.id,
+                'name': challenge.name,
+                'xp_reward': challenge.xp_reward,
+                'points_reward': challenge.points_reward
+            })
+    
+    db.session.commit()
+    return completed_challenges
+
+def check_achievements(user_id):
+    """Verifica e desbloqueia conquistas"""
+    progress = get_or_create_user_progress(user_id)
+    unlocked_achievements = []
+    
+    # Buscar todas as conquistas ativas
+    achievements = Achievement.query.filter_by(is_active=True).all()
+    
+    for achievement in achievements:
+        # Verificar se já desbloqueou
+        if UserAchievement.query.filter_by(
+            user_id=user_id,
+            achievement_id=achievement.id
+        ).first():
+            continue
+        
+        # Verificar requisitos
+        unlocked = False
+        if achievement.requirement_type == 'workout_count':
+            unlocked = progress.total_workouts >= achievement.requirement_value
+        elif achievement.requirement_type == 'streak':
+            unlocked = progress.current_streak >= achievement.requirement_value
+        elif achievement.requirement_type == 'level':
+            unlocked = progress.level >= achievement.requirement_value
+        elif achievement.requirement_type == 'total_xp':
+            unlocked = progress.xp >= achievement.requirement_value
+        
+        if unlocked:
+            user_achievement = UserAchievement(
+                user_id=user_id,
+                achievement_id=achievement.id
+            )
+            db.session.add(user_achievement)
+            add_xp(user_id, achievement.xp_reward)
+            progress.total_points += achievement.points_reward
+            unlocked_achievements.append({
+                'id': achievement.id,
+                'name': achievement.name,
+                'description': achievement.description,
+                'icon': achievement.icon,
+                'xp_reward': achievement.xp_reward,
+                'points_reward': achievement.points_reward,
+                'rarity': achievement.rarity
+            })
+    
+    db.session.commit()
+    return unlocked_achievements
+
+# Endpoints de Gamificação
+
+@app.route('/api/gamification/progress', methods=['GET'])
+@login_required
+def get_progress():
+    """Retorna o progresso do usuário (XP, nível, streak, etc.)"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    progress = get_or_create_user_progress(user.id)
+    xp_for_next_level = calculate_xp_for_level(progress.level + 1)
+    # Nível 1 começa em 0 XP; níveis seguintes começam no limite do nível anterior
+    xp_current_level = 0 if progress.level <= 1 else calculate_xp_for_level(progress.level)
+    xp_progress = max(0, progress.xp - xp_current_level)
+    xp_needed = xp_for_next_level - xp_current_level
+    
+    return jsonify({
+        'xp': progress.xp,
+        'level': progress.level,
+        'total_points': progress.total_points,
+        'current_streak': progress.current_streak,
+        'longest_streak': progress.longest_streak,
+        'total_workouts': progress.total_workouts,
+        'xp_progress': xp_progress,
+        'xp_needed': xp_needed,
+        'xp_for_next_level': xp_for_next_level
+    })
+
+@app.route('/api/gamification/challenges', methods=['GET'])
+@login_required
+def get_challenges():
+    """Retorna todos os desafios disponíveis"""
+    from datetime import datetime, timedelta
+    
+    challenges = Challenge.query.filter_by(is_active=True).all()
+    user = get_current_user()
+    
+    if not user:
+        return jsonify({'error': 'User not found'}), 401
+    
+    # Debug: verificar quantos desafios periódicos existem
+    periodic_challenges = [c for c in challenges if c.period_type in ['daily', 'weekly', 'monthly']]
+    print(f"DEBUG: Total challenges: {len(challenges)}, Periodic: {len(periodic_challenges)}")
+    print(f"DEBUG: Daily: {len([c for c in challenges if c.period_type == 'daily'])}, Weekly: {len([c for c in challenges if c.period_type == 'weekly'])}, Monthly: {len([c for c in challenges if c.period_type == 'monthly'])}")
+    
+    # Para desafios periódicos, iniciar automaticamente se não existirem
+    today = datetime.utcnow().date()
+    week_start = today - timedelta(days=today.weekday())
+    month_start = today.replace(day=1)
+    
+    result = []
+    for challenge in challenges:
+        # Para desafios periódicos, sempre verificar/criar para o período atual
+        user_challenge = None
+        
+        if challenge.period_type in ['daily', 'weekly', 'monthly']:
+            # Buscar UserChallenge existente
+            existing = UserChallenge.query.filter_by(
+                user_id=user.id,
+                challenge_id=challenge.id
+            ).first()
+            
+            # Se existe, verificar se é do período atual
+            if existing:
+                started_date = existing.started_at.date() if hasattr(existing.started_at, 'date') else existing.started_at
+                is_current_period = False
+                
+                if challenge.period_type == 'daily':
+                    is_current_period = (started_date == today)
+                elif challenge.period_type == 'weekly':
+                    started_week = started_date - timedelta(days=started_date.weekday())
+                    is_current_period = (started_week == week_start)
+                elif challenge.period_type == 'monthly':
+                    started_month = started_date.replace(day=1)
+                    is_current_period = (started_month == month_start)
+                
+                if is_current_period:
+                    user_challenge = existing
+                else:
+                    # Período mudou: criar novo para o período atual, salvo se o usuário desistiu deste período
+                    period_start = today if challenge.period_type == 'daily' else (week_start if challenge.period_type == 'weekly' else month_start)
+                    if not ChallengeAbandon.query.filter_by(user_id=user.id, challenge_id=challenge.id, period_type=challenge.period_type, period_start=period_start).first():
+                        user_challenge = UserChallenge(
+                            user_id=user.id,
+                            challenge_id=challenge.id,
+                            target_value=challenge.target_value,
+                            progress=0,
+                            started_at=datetime.utcnow()
+                        )
+                        db.session.add(user_challenge)
+                        db.session.flush()
+            else:
+                # Não existe: criar novo, salvo se o usuário desistiu deste período
+                period_start = today if challenge.period_type == 'daily' else (week_start if challenge.period_type == 'weekly' else month_start)
+                if not ChallengeAbandon.query.filter_by(user_id=user.id, challenge_id=challenge.id, period_type=challenge.period_type, period_start=period_start).first():
+                    user_challenge = UserChallenge(
+                        user_id=user.id,
+                        challenge_id=challenge.id,
+                        target_value=challenge.target_value,
+                        progress=0,
+                        started_at=datetime.utcnow()
+                    )
+                    db.session.add(user_challenge)
+                    db.session.flush()
+        else:
+            # Desafio cumulativo: buscar normalmente
+            user_challenge = UserChallenge.query.filter_by(
+                user_id=user.id,
+                challenge_id=challenge.id
+            ).first()
+        
+        # Atualizar progresso para desafios periódicos
+        if user_challenge and challenge.period_type in ['daily', 'weekly', 'monthly']:
+            # Calcular progresso atual do período
+            if challenge.challenge_type == 'workout_count':
+                from datetime import datetime as dt
+                if challenge.period_type == 'daily':
+                    today_start = dt.combine(today, dt.min.time())
+                    today_end = dt.combine(today, dt.max.time())
+                    workout_count = Workout.query.filter_by(user_id=user.id).filter(
+                        Workout.date >= today_start,
+                        Workout.date <= today_end
+                    ).count()
+                    user_challenge.progress = workout_count
+                elif challenge.period_type == 'weekly':
+                    # Contar dias únicos da semana
+                    week_start_dt = dt.combine(week_start, dt.min.time())
+                    week_end_dt = dt.combine(week_start + timedelta(days=6), dt.max.time())
+                    workouts = Workout.query.filter_by(user_id=user.id).filter(
+                        Workout.date >= week_start_dt,
+                        Workout.date <= week_end_dt
+                    ).all()
+                    unique_dates = set()
+                    for workout in workouts:
+                        workout_date = workout.date.date() if hasattr(workout.date, 'date') else workout.date
+                        unique_dates.add(workout_date)
+                    user_challenge.progress = len(unique_dates)
+                elif challenge.period_type == 'monthly':
+                    # Contar dias únicos do mês
+                    month_start_dt = dt.combine(month_start, dt.min.time())
+                    if month_start.month == 12:
+                        next_month = month_start.replace(year=month_start.year + 1, month=1, day=1)
+                    else:
+                        next_month = month_start.replace(month=month_start.month + 1, day=1)
+                    month_end_date = next_month - timedelta(days=1)
+                    month_end_dt = dt.combine(month_end_date, dt.max.time())
+                    workouts = Workout.query.filter_by(user_id=user.id).filter(
+                        Workout.date >= month_start_dt,
+                        Workout.date <= month_end_dt
+                    ).all()
+                    unique_dates = set()
+                    for workout in workouts:
+                        workout_date = workout.date.date() if hasattr(workout.date, 'date') else workout.date
+                        unique_dates.add(workout_date)
+                    user_challenge.progress = len(unique_dates)
+        
+        result.append({
+            'id': challenge.id,
+            'name': challenge.name,
+            'description': challenge.description,
+            'type': challenge.challenge_type,
+            'period_type': challenge.period_type or 'cumulative',
+            'target_value': challenge.target_value,
+            'xp_reward': challenge.xp_reward,
+            'points_reward': challenge.points_reward,
+            'difficulty': challenge.difficulty,
+            'exercise_id': challenge.exercise_id,
+            'is_started': user_challenge is not None,
+            'progress': user_challenge.progress if user_challenge else 0,
+            'is_completed': user_challenge.is_completed if user_challenge else False
+        })
+    
+    # Ordenar por dificuldade: Easy → Medium → Hard → Expert
+    diff_order = {'easy': 0, 'medium': 1, 'hard': 2, 'expert': 3}
+    result.sort(key=lambda c: diff_order.get(c.get('difficulty'), 99))
+    
+    db.session.commit()
+    return jsonify(result)
+
+@app.route('/api/gamification/challenges/active', methods=['GET'])
+@login_required
+def get_active_challenges():
+    """Retorna desafios ativos do usuário"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    user_challenges = UserChallenge.query.filter_by(
+        user_id=user.id,
+        is_completed=False
+    ).all()
+    
+    result = []
+    for uc in user_challenges:
+        challenge = uc.challenge
+        result.append({
+            'id': challenge.id,
+            'name': challenge.name,
+            'description': challenge.description,
+            'type': challenge.challenge_type,
+            'period_type': challenge.period_type or 'cumulative',
+            'target_value': uc.target_value,
+            'progress': uc.progress,
+            'xp_reward': challenge.xp_reward,
+            'points_reward': challenge.points_reward,
+            'difficulty': challenge.difficulty,
+            'started_at': uc.started_at.isoformat() if uc.started_at else None
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/gamification/challenges/<int:challenge_id>/start', methods=['POST'])
+@login_required
+def start_challenge(challenge_id):
+    """Inicia um desafio para o usuário"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    challenge = Challenge.query.get_or_404(challenge_id)
+    
+    # Verificar se já iniciou
+    existing = UserChallenge.query.filter_by(
+        user_id=user.id,
+        challenge_id=challenge_id
+    ).first()
+    
+    if existing:
+        if existing.is_completed:
+            return jsonify({'error': 'Challenge already completed'}), 400
+        return jsonify({'message': 'Challenge already started', 'user_challenge_id': existing.id})
+    
+    user_challenge = UserChallenge(
+        user_id=user.id,
+        challenge_id=challenge_id,
+        target_value=challenge.target_value,
+        progress=0
+    )
+    db.session.add(user_challenge)
+    db.session.commit()
+    
+    return jsonify({
+        'message': 'Challenge started',
+        'user_challenge_id': user_challenge.id
+    }), 201
+
+@app.route('/api/gamification/challenges/<int:challenge_id>/abandon', methods=['POST'])
+@login_required
+def abandon_challenge(challenge_id):
+    """Desiste do desafio em progresso: remove o UserChallenge e o desafio volta para disponíveis."""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    challenge = Challenge.query.get_or_404(challenge_id)
+    to_delete = UserChallenge.query.filter_by(
+        user_id=user.id,
+        challenge_id=challenge_id,
+        is_completed=False
+    ).all()
+    if not to_delete:
+        return jsonify({'error': 'No active challenge to abandon'}), 400
+    
+    # Para desafios periódicos: registar desistência do período para não recriar ao buscar
+    if challenge.period_type in ('daily', 'weekly', 'monthly'):
+        uc = to_delete[0]
+        started_date = uc.started_at.date() if hasattr(uc.started_at, 'date') else uc.started_at
+        if challenge.period_type == 'daily':
+            period_start = started_date
+        elif challenge.period_type == 'weekly':
+            period_start = started_date - timedelta(days=started_date.weekday())
+        else:
+            period_start = started_date.replace(day=1)
+        db.session.add(ChallengeAbandon(
+            user_id=user.id, challenge_id=challenge_id,
+            period_type=challenge.period_type, period_start=period_start
+        ))
+    
+    for uc in to_delete:
+        db.session.delete(uc)
+    db.session.commit()
+    return jsonify({'message': 'Challenge abandoned'}), 200
+
+@app.route('/api/gamification/achievements', methods=['GET'])
+@login_required
+def get_achievements():
+    """Retorna conquistas do usuário"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    user_achievements = UserAchievement.query.filter_by(user_id=user.id).all()
+    
+    result = []
+    for ua in user_achievements:
+        achievement = ua.achievement
+        result.append({
+            'id': achievement.id,
+            'name': achievement.name,
+            'description': achievement.description,
+            'icon': achievement.icon,
+            'category': achievement.category,
+            'rarity': achievement.rarity,
+            'unlocked_at': ua.unlocked_at.isoformat() if ua.unlocked_at else None
+        })
+    
+    return jsonify(result)
+
+@app.route('/api/gamification/achievements/all', methods=['GET'])
+@login_required
+def get_all_achievements():
+    """Retorna todas as conquistas disponíveis com status do usuário"""
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+    
+    achievements = Achievement.query.filter_by(is_active=True).all()
+    user_achievement_ids = {ua.achievement_id for ua in UserAchievement.query.filter_by(user_id=user.id).all()}
+    
+    result = []
+    for achievement in achievements:
+        result.append({
+            'id': achievement.id,
+            'name': achievement.name,
+            'description': achievement.description,
+            'icon': achievement.icon,
+            'category': achievement.category,
+            'rarity': achievement.rarity,
+            'requirement_type': achievement.requirement_type,
+            'requirement_value': achievement.requirement_value,
+            'xp_reward': achievement.xp_reward,
+            'points_reward': achievement.points_reward,
+            'is_unlocked': achievement.id in user_achievement_ids
+        })
+    
+    return jsonify(result)
+
+# Integração com criação de treinos
+# Modificar o endpoint de criação de treino para atualizar gamificação
+def update_gamification_on_workout(user_id, workout_data):
+    """Atualiza gamificação quando um treino é criado"""
+    if not user_id:
+        return None, []
+    
+    # Adicionar XP base por treino
+    progress = add_xp(user_id, 50)  # 50 XP por treino
+    
+    # Atualizar streak
+    workout_date = datetime.fromisoformat(workout_data['date']) if isinstance(workout_data['date'], str) else workout_data['date']
+    update_streak(user_id, workout_date)
+    
+    # Verificar desafios
+    completed_challenges = check_challenges(user_id, workout_data)
+    
+    # Verificar conquistas
+    unlocked_achievements = check_achievements(user_id)
+    
+    return progress, completed_challenges, unlocked_achievements
+
+# Modificar endpoint de criação de treino para incluir gamificação
+# (Vamos fazer isso depois, primeiro vamos testar os endpoints)
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

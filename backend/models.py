@@ -131,3 +131,110 @@ class RoutineExercise(db.Model):
     def __repr__(self):
         return f'<RoutineExercise {self.exercise_id} - {self.routine_id}>'
 
+# ========== GAMIFICAÇÃO ==========
+
+class UserProgress(db.Model):
+    __tablename__ = 'user_progress'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    xp = db.Column(db.Integer, default=0)  # Experiência total
+    level = db.Column(db.Integer, default=1)  # Nível atual
+    total_points = db.Column(db.Integer, default=0)  # Pontos totais acumulados
+    current_streak = db.Column(db.Integer, default=0)  # Sequência atual de treinos
+    longest_streak = db.Column(db.Integer, default=0)  # Maior sequência já alcançada
+    last_workout_date = db.Column(db.DateTime, nullable=True)  # Data do último treino
+    total_workouts = db.Column(db.Integer, default=0)  # Total de treinos realizados
+    updated_at = db.Column(db.DateTime, nullable=False, default=db.func.now(), onupdate=db.func.now())
+    
+    user = db.relationship('User')
+    
+    def __repr__(self):
+        return f'<UserProgress {self.user_id} - Level {self.level}>'
+
+class Challenge(db.Model):
+    __tablename__ = 'challenges'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    challenge_type = db.Column(db.String(50), nullable=False)  # 'workout_count', 'streak', 'pr', 'exercise_specific', 'weight_total', 'volume'
+    period_type = db.Column(db.String(20), default='cumulative')  # 'daily', 'weekly', 'monthly', 'cumulative'
+    target_value = db.Column(db.Integer, nullable=False)  # Valor alvo (ex: 10 treinos, 7 dias de streak)
+    xp_reward = db.Column(db.Integer, default=100)  # XP ganho ao completar
+    points_reward = db.Column(db.Integer, default=50)  # Pontos ganhos
+    difficulty = db.Column(db.String(20), default='medium')  # 'easy', 'medium', 'hard', 'expert'
+    exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=True)  # Para desafios específicos de exercício
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    exercise = db.relationship('Exercise')
+    
+    def __repr__(self):
+        return f'<Challenge {self.name}>'
+
+class UserChallenge(db.Model):
+    __tablename__ = 'user_challenges'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'), nullable=False)
+    progress = db.Column(db.Integer, default=0)  # Progresso atual
+    target_value = db.Column(db.Integer, nullable=False)  # Valor alvo (pode ser diferente do challenge padrão)
+    is_completed = db.Column(db.Boolean, default=False)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    started_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    user = db.relationship('User')
+    challenge = db.relationship('Challenge')
+    
+    def __repr__(self):
+        return f'<UserChallenge {self.user_id} - {self.challenge_id}>'
+
+class ChallengeAbandon(db.Model):
+    """Registo de desistência num período (diário/semanal/mensal) para não recriar UserChallenge."""
+    __tablename__ = 'challenge_abandons'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    challenge_id = db.Column(db.Integer, db.ForeignKey('challenges.id'), nullable=False)
+    period_type = db.Column(db.String(20), nullable=False)  # 'daily', 'weekly', 'monthly'
+    period_start = db.Column(db.Date, nullable=False)  # início do período (data, 2ª feira ou dia 1)
+
+    def __repr__(self):
+        return f'<ChallengeAbandon {self.user_id} - {self.challenge_id} {self.period_type}>'
+
+class Achievement(db.Model):
+    __tablename__ = 'achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    icon = db.Column(db.String(50), default='🏆')  # Emoji ou nome do ícone
+    category = db.Column(db.String(50), default='general')  # 'streak', 'workout', 'pr', 'milestone', 'special'
+    requirement_type = db.Column(db.String(50), nullable=False)  # 'workout_count', 'streak', 'pr_count', 'level', 'total_xp'
+    requirement_value = db.Column(db.Integer, nullable=False)
+    xp_reward = db.Column(db.Integer, default=200)
+    points_reward = db.Column(db.Integer, default=100)
+    rarity = db.Column(db.String(20), default='common')  # 'common', 'rare', 'epic', 'legendary'
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    def __repr__(self):
+        return f'<Achievement {self.name}>'
+
+class UserAchievement(db.Model):
+    __tablename__ = 'user_achievements'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    achievement_id = db.Column(db.Integer, db.ForeignKey('achievements.id'), nullable=False)
+    unlocked_at = db.Column(db.DateTime, nullable=False, default=db.func.now())
+    
+    user = db.relationship('User')
+    achievement = db.relationship('Achievement')
+    
+    # Unique constraint para evitar duplicatas
+    __table_args__ = (db.UniqueConstraint('user_id', 'achievement_id', name='unique_user_achievement'),)
+    
+    def __repr__(self):
+        return f'<UserAchievement {self.user_id} - {self.achievement_id}>'
