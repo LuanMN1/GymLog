@@ -189,7 +189,8 @@ export const translations = {
       delete: "Delete",
       confirm: "Confirm",
       success: "Success",
-      ok: "OK"
+      ok: "OK",
+      saving: "Saving..."
     },
     history: {
       title: "Workout History",
@@ -509,7 +510,10 @@ export const translations = {
       seconds: "seg",
       loading: "Carregando...",
       delete: "Deletar",
-      confirm: "Confirmar"
+      confirm: "Confirmar",
+      success: "Sucesso",
+      ok: "OK",
+      saving: "Salvando..."
     },
     forms: {
       create: "Criar",
@@ -632,7 +636,10 @@ export const translations = {
       seconds: "seg",
       loading: "Carregando...",
       delete: "Deletar",
-      confirm: "Confirmar"
+      confirm: "Confirmar",
+      success: "Sucesso",
+      ok: "OK",
+      saving: "Salvando..."
     },
     history: {
       title: "Histórico de Treinos",
@@ -961,7 +968,10 @@ export const translations = {
       seconds: "seg",
       loading: "A carregar...",
       delete: "Deletar",
-      confirm: "Confirmar"
+      confirm: "Confirmar",
+      success: "Sucesso",
+      ok: "OK",
+      saving: "A guardar..."
     },
     forms: {
       create: "Criar",
@@ -1086,7 +1096,8 @@ export const translations = {
       delete: "Deletar",
       confirm: "Confirmar",
       success: "Sucesso",
-      ok: "OK"
+      ok: "OK",
+      saving: "A guardar..."
     },
     history: {
       title: "Histórico de Treinos",
